@@ -11,8 +11,6 @@ services:
     volumes:
       - ./php/php.ini:/usr/local/etc/php/conf.d/custom.ini
       - .:/var/www
-    environment:
-      - DATABASE_URL=mysql://username:password@mysql/${PROJECT_NAME}
 
   # Nginx Service for Laravel
   webserver:
@@ -32,7 +30,7 @@ services:
     ports:
       - "${DB_PORT}:3306"
     environment:
-      MYSQL_DATABASE: username
+      MYSQL_DATABASE: ${PROJECT_NAME}
       MYSQL_ROOT_PASSWORD: password
     volumes:
       - dbdata:/var/lib/mysql
