@@ -22,7 +22,7 @@ RUN apt-get update && apt-get install -y \
 # pdftk ghostscript
 
 # ============ FRONTEND BUILD (if building assets in container) ============
-RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
  && apt-get install -y nodejs
 
 # ============ BACKGROUND JOBS (queues/workers) ============
