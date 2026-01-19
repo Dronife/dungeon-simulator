@@ -27,12 +27,44 @@ class Character extends Model
         'limits',
         'intentions',
         'temperature',
+        'str',
+        'dex',
+        'con',
+        'int',
+        'wis',
+        'cha',
+        'hp',
+        'max_hp',
     ];
 
     protected $casts = [
         'is_player' => 'boolean',
         'temperature' => 'float',
+        'str' => 'integer',
+        'dex' => 'integer',
+        'con' => 'integer',
+        'int' => 'integer',
+        'wis' => 'integer',
+        'cha' => 'integer',
+        'hp' => 'integer',
+        'max_hp' => 'integer',
     ];
+
+    /**
+     * Calculate modifier from stat value.
+     * D&D formula: (stat - 10) / 2, rounded down
+     */
+    public function modifier(int $stat): int
+    {
+        return (int) floor(($stat - 10) / 2);
+    }
+
+    public function strMod(): int { return $this->modifier($this->str); }
+    public function dexMod(): int { return $this->modifier($this->dex); }
+    public function conMod(): int { return $this->modifier($this->con); }
+    public function intMod(): int { return $this->modifier($this->int); }
+    public function wisMod(): int { return $this->modifier($this->wis); }
+    public function chaMod(): int { return $this->modifier($this->cha); }
 
     public function game(): BelongsTo
     {

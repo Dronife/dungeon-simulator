@@ -15,6 +15,11 @@ class Game extends Model
         return $this->hasMany(Character::class);
     }
 
+    public function world(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(World::class);
+    }
+
     public function dmMemories(): HasMany
     {
         return $this->hasMany(DmMemory::class);
