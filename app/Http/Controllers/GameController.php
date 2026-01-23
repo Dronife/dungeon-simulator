@@ -25,7 +25,17 @@ class GameController extends Controller
         $generator = new WorldGenerator();
         $data = $generator->generate();
 
-        return response()->json($data);
+        // Render the character sheet partial
+        $html = view('game.partials.character-sheet', [
+            'player' => $data['character'],
+            'world' => $data['world'],
+            'lore' => $data['world_lore'] ?? [],
+        ])->render();
+
+        return response()->json([
+            'data' => $data,
+            'html' => $html,
+        ]);
     }
 
     public function store(Request $request)
