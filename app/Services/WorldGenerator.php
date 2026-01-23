@@ -7,6 +7,7 @@ use App\Clients\GeminiClient;
 class WorldGenerator
 {
     private GeminiClient $client;
+    private float $globalTemperature;
 
     public function __construct()
     {
@@ -16,13 +17,14 @@ class WorldGenerator
     public function generate(): array
     {
         ini_set('max_execution_time', 300);
+        $this->globalTemperature = abs((random_int(-100,100))/100);
 
         $prompt = $this->buildPrompt();
 
         $response = $this->client->generate(
             prompt: $prompt,
             systemPrompt: 'You are a fantasy world and character generator. Return ONLY valid JSON, no markdown, no explanation.',
-            temperature: abs(random_int(-100,100)/100),
+            temperature: $this->globalTemperature,
         );
 
         $json = json_decode($response->text, true);
@@ -35,8 +37,14 @@ class WorldGenerator
             $json['character'][$key] = $stat;
         }
 
+        $json['character']['temperature'] = $this->globalTemperature;
 
         return $json;
+    }
+
+    public function getTemperature(): int
+    {
+        return $this->globalTemperature;
     }
 
     private function buildPrompt(): string
@@ -55,7 +63,23 @@ class WorldGenerator
              Chaotic temperature is how chaotic things are. -1 Chaos is not chaotic - it is very structured, not random attributes - for instance as person in the morning he or she wakes up always n 7 am. Never lies and are really trustworthy. Basically structured people with order in their lives
              On the other hand chaos 1 is opposite - as an example person in the morning can go hunt dragons and in the evening they will knit their scarf.
              Then there is positive temperature. Person with -1 positiveness is really negative, bitter, do not trust people, do not like things, are sceptical etc etc.
-             On the other hand person with 1 positiveness is positive, outgoing, more likely to trust people, more kee to like things
+             On the other hand person with 1 positiveness is positive, outgoing, more likely to trust people, more kee to like things.
+
+            if you gonna use strange world building with unknown phrases, please add them to the json and explain them. For instance if you say character's trauma is "saw how her mother was consumed by snaily snail ghost snail" - then you add the "snaily snail ghost snail" into world_lore.
+            lore_temperature is between 0 and 1. It indicates how much lore to add. Preference is to not add stuff around. But if lore temperature allows it, you can add.
+
+
+            There are 11(personality, traits, trauma, hobbies, routines, job, skills, goals, secrets, limits, intentions) personality attributes. They are all equally important, so it does not matter which ones do you fill or not.
+            Depending on the temperature you need to fill that much:
+            temperature between 0 and 0.2 - minimum 1 and max 3 attributes.
+            temperature between 0.21 and 0.45 - minimum 3 and max 6 attributes.
+            temperature between 0.46 and 0.99 - minimum 7 and max 11 attributes.
+
+            the "predefined_world_lore_values_if_any" is helper for llm because llm can not think always and it helps to write lore IF THERE IS ANY.
+            It is not clear how many lore items LLM will write so there will be 10 items in order saying if
+            description has much information, if known_how is possible, if there is reason, occurrence.(All values between 0 and 100).
+            The lower the value for attribute the less text and the more direct text becomes.
+
             structure:
             {
                 "character": {
@@ -72,22 +96,62 @@ class WorldGenerator
                     "secrets": "string - something they hide from others",
                     "limits": "string - lines they won't cross, weaknesses",
                     "intentions": "string - current short-term plans",
-                    "chaotic-temperature": %d,
-                    "positive-temperature": %d,
+                    "chaotic_temperature": %.2f,
+                    "positive_temperature": %.2f,
+                    "lore_temperature": %.2f,
+                    "temperature": %.2f,
+                    "how_many_attributes-to-fill": %d
+                    "attributes_to_fill": %s
                 },
-                "world": {
-                    "time": "string - era, season, time of day",
-                    "universe_rules": "string - how magic works, gods, special physics or rules",
-                    "environment_description": "string - the starting location, atmosphere, key features"
+                "predefined_world": {
+                    %s
                 }
+                "world": {
+                    "time": "era, season, time of day",
+                    "universe_rules": "how magic works, gods, special physics or rules",
+                    "environment_description": "the starting location, atmosphere, key features"
+                },
+                "world_explanation": {
+                    "world_era" : "what is this era?",
+                    "magic": "if any",
+                    "gods": "if any",
+                    "physics": "if any",
+                    "specific_rules": "if any",
+                    "current_location": "place"
+
+                },
+                "predefined_world_lore_values_if_any": [
+                    %s
+                ],
+                "world_lore": [
+                    {
+                        "name": "name of thing you write",
+                        "type": "event|place|creature|organization|artifact|phenomenon",
+                        "description": "what it is, 1-2 sentences",
+                        "know_how": "where to find or how to make or how to acquire if possible"
+                        "reason" : "what causes or why it exists",
+                        "occurrence" : "occasionally, sometimes, frequently, often, usually, regularly, consistently, constantly, invariably, and forever",
+                        "image_prompt" : "straight to te point, abstract, epic, concept art of a thing you write"
+                    }
+                ]
             }
 
-            Stats should reflect the character's background. An archivist might have high INT/WIS but low STR. A blacksmith would have high STR/CON. Average human is 10 in all stats.
+            Please return predefined_world_lore_values_if_any elements as much as world_lore there are elements no more no less.
 
             Be creative but coherent. Make the character feel real with flaws and depth. The world should have interesting hooks for adventure.
             PROMPT;
 
-        $prompt = sprintf($prompt, random_int(-100,100)/100, random_int(-100,100)/100);
+        $attributeCount =  $this->getAttributeCount();
+        $prompt = sprintf(
+            $prompt,
+            random_int(-100,100)/100,
+            random_int(-100,100)/100,
+            abs(random_int(-100,100)/100)/2,
+            $this->globalTemperature,
+            $attributeCount,
+            $this->getAttributeNames($attributeCount),
+            $this->getPredefinedLoreStats(),
+        );
 
         return $prompt;
     }
@@ -113,5 +177,44 @@ class WorldGenerator
             'intention_severity' => random_int(1, 10),
             'personality_severity' => random_int(1, 10),
         ];
+    }
+
+    private function getAttributeCount(): int
+    {
+        if($this->globalTemperature >= 0 && $this->globalTemperature <= 0.2){
+            return random_int(1,3);
+        }
+
+        if($this->globalTemperature >= 0.21 && $this->globalTemperature <= .45){
+            return random_int(3,6);
+        }
+
+        return random_int(7,11);
+    }
+
+    public function getAttributeNames(int $amount): string
+    {
+        $attributes = ['personality', 'traits', 'trauma', 'hobbies', 'routines', 'job', 'skills', 'goals', 'secrets', 'limits', 'intentions'];
+
+        shuffle($attributes);
+
+        return implode(', ', array_slice($attributes, 0, $amount));
+    }
+
+
+    public function getPredefinedLoreStats(): string {
+        $lore = [];
+        for($i = 0; $i < 10; $i++){
+            $lore[] = [
+                'description' => random_int(1, 100),
+                'known_how' => random_int(1, 100),
+                'reason' => random_int(1, 100),
+                'occurrence' => random_int(1, 100),
+                'grounding' => random_int(1, 100),
+                'chaos' => random_int(1, 100),
+            ] ;
+        }
+
+        return json_encode($lore);
     }
 }
