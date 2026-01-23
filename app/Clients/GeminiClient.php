@@ -10,7 +10,10 @@ use Gemini\Laravel\Facades\Gemini;
 
 class GeminiClient
 {
-    private string $model = 'gemini-3-flash-preview';
+    public const MODEL_FLASH = 'gemini-3-flash-preview';
+    public const MODEL_PRO = 'gemini-3-pro-preview';
+
+    private string $model = self::MODEL_FLASH;
 
     public function __construct(?string $model = null)
     {

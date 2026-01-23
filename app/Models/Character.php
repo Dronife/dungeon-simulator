@@ -35,6 +35,12 @@ class Character extends Model
         'cha',
         'hp',
         'max_hp',
+        'trauma_severity',
+        'goal_severity',
+        'intention_severity',
+        'personality_severity',
+        'chaotic_temperature',
+        'positive_temperature',
     ];
 
     protected $casts = [
@@ -48,6 +54,12 @@ class Character extends Model
         'cha' => 'integer',
         'hp' => 'integer',
         'max_hp' => 'integer',
+        'trauma_severity' => 'integer',
+        'goal_severity' => 'integer',
+        'intention_severity' => 'integer',
+        'personality_severity' => 'integer',
+        'chaotic_temperature' => 'float',
+        'positive_temperature' => 'float',
     ];
 
     /**

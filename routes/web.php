@@ -14,6 +14,7 @@ Route::get('/', fn() => redirect()->route('game.index'));
 
 // Games
 Route::get('/game', [GameController::class, 'index'])->name('game.index');
+Route::post('/game', [GameController::class, 'store'])->name('game.store');
 Route::get('/game/{game}', [GameController::class, 'show'])->name('game.show');
 Route::delete('/game/{game}', [GameController::class, 'destroy'])->name('game.destroy');
 Route::post('/game/generate', [GameController::class, 'generate'])->name('game.generate');
@@ -21,4 +22,3 @@ Route::post('/game/generate', [GameController::class, 'generate'])->name('game.g
 // Playground
 Route::get('/playground', [PlaygroundController::class, 'index'])->name('playground');
 Route::post('/playground/generate', [PlaygroundController::class, 'generate'])->name('playground.generate');
-

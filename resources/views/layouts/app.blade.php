@@ -69,7 +69,7 @@
     <div class="max-w-7xl mx-auto flex items-center justify-between">
         <a href="{{ route('game.index') }}" class="flex items-center gap-2">
             <span class="text-2xl">🎲</span>
-            <span class="text-xl font-bold text-dnd-red">DND Engine</span>
+            <span class="text-xl font-bold text-dnd-red">sr Engine</span>
         </a>
         <div class="flex items-center gap-4">
             <a href="{{ route('game.index') }}" class="text-white/70 hover:text-white transition">Games</a>

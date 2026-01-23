@@ -8,7 +8,17 @@ use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 class Game extends Model
 {
-    protected $fillable = [];
+    protected $fillable = [
+//        'name',
+//        'status',
+//        'current_tick',
+//        'global_rules',
+    ];
+
+    protected $casts = [
+//        'global_rules' => 'array',
+//        'current_tick' => 'integer',
+    ];
 
     public function characters(): HasMany
     {
