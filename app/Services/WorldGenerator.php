@@ -80,6 +80,26 @@ class WorldGenerator
             description has much information, if known_how is possible, if there is reason, occurrence.(All values between 0 and 100).
             The lower the value for attribute the less text and the more direct text becomes.
 
+            world_explanation_predefined will have predefined values
+            "magic":
+                - 0-36 from none to minimal, there are instances where luck+dedication+will+genes makes you insane user. <= 1 percent of people able to use in extreme levels. Magic is really grounded. logical magical systems.
+                - 37-78 from minimal to moderate magic. It has system but is more loose, also grounded. Magic is more often in the world.
+                - 79-100 from moderate to always magic. It is grounded, but nothing special.
+            "gods":
+                - 0-36 - None to max 2. None can be anything else, super humans or something like that. Gods are more like fairy tales. But if higher score they exist, but it is really rare that gods appears
+                - 37-78  can be one or few. Gods are present. Time to time they appear. People know that they exist, but is rare occasion they appear.
+                - 79-100, They kinda like rare celebrities, they appear time to time. They like to interfere with human decisions
+            "physics":
+                - 0-50 - simple physics
+                - 51-100 - there can be from zero two few physic quirks that the real world does not have, but possible in sci-fi,
+            "specific_rules":
+                - 0-50 - nothing specific
+                - 51-100 - from nothing to one or few specific world/nation rules
+            "current_location":
+                - 0-36 - small village
+                - 37-78 - small town
+                - 79-100 - capital
+
             structure:
             {
                 "character": {
@@ -118,7 +138,6 @@ class WorldGenerator
                     "physics": "if any",
                     "specific_rules": "if any",
                     "current_location": "place"
-
                 },
                 "predefined_world_lore_values_if_any": [
                     %s
@@ -150,6 +169,7 @@ class WorldGenerator
             $this->globalTemperature,
             $attributeCount,
             $this->getAttributeNames($attributeCount),
+            $this->worldExplanationPredefined(),
             $this->getPredefinedLoreStats(),
         );
 
@@ -216,5 +236,18 @@ class WorldGenerator
         }
 
         return json_encode($lore);
+    }
+
+    private function worldExplanationPredefined(): string
+    {
+        $world =  [
+            'magic' => random_int(1,100),
+            'gods' => random_int(1,100),
+            'physics' => random_int(1,100),
+            'specific_rules' => random_int(1,100),
+            'current_location' => random_int(1,100),
+        ];
+
+        return json_encode($world);
     }
 }
