@@ -18,13 +18,14 @@ class WorldGenerator
     {
         ini_set('max_execution_time', 300);
         $this->globalTemperature = abs((random_int(-100,100))/100);
-
         $prompt = $this->buildPrompt();
+
+//        $this->client->setModel(GeminiClient::MODEL_PRO);
 
         $response = $this->client->generate(
             prompt: $prompt,
             systemPrompt: 'You are a fantasy world and character generator. Return ONLY valid JSON, no markdown, no explanation.',
-            temperature: $this->globalTemperature,
+            temperature: 1.0,
         );
 
         $json = json_decode($response->text, true);
@@ -116,6 +117,7 @@ class WorldGenerator
                     "secrets": "string - something they hide from others",
                     "limits": "string - lines they won't cross, weaknesses",
                     "intentions": "string - current short-term plans",
+                    "image_prompt": "Character overall view - how beautiful/ugly/fat/amazing looking must be in prompt. You can take the number out of "predefined_character_facial_features_and_overall_look". Not too long descriptive prompt about character how he or she or it looks like doing what they like to do or in action. Do not use language where you would need to know context to understand"
                     "chaotic_temperature": %.2f,
                     "positive_temperature": %.2f,
                     "lore_temperature": %.2f,
@@ -123,6 +125,7 @@ class WorldGenerator
                     "how_many_attributes-to-fill": %d
                     "attributes_to_fill": %s
                 },
+                "predefined_character_facial_features_and_overall_look" : %.2f out of 10,
                 "predefined_world": {
                     %s
                 }
@@ -169,6 +172,7 @@ class WorldGenerator
             $this->globalTemperature,
             $attributeCount,
             $this->getAttributeNames($attributeCount),
+            random_int(0,100)/10,
             $this->worldExplanationPredefined(),
             $this->getPredefinedLoreStats(),
         );

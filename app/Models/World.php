@@ -14,6 +14,10 @@ class World extends Model
         'environment_description',
     ];
 
+    protected $casts = [
+        'lore' => 'array',
+    ];
+
     public function game(): BelongsTo
     {
         return $this->belongsTo(Game::class);

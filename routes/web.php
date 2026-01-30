@@ -3,10 +3,10 @@
 use App\Http\Controllers\GameController;
 use App\Http\Controllers\PlaygroundController;
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 
-//Route::get('/', function () {
-//    return view('welcome');
-//});
+Route::get('/test', fn() => Inertia::render('Test'));
+
 
 Route::get('/testllm', [\App\Http\Controllers\TestController::class, 'test']);
 

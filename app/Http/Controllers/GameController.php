@@ -3,15 +3,20 @@
 namespace App\Http\Controllers;
 
 use App\Models\Game;
+use App\Models\Image;
+use App\Services\ImageGenerator;
 use App\Services\WorldGenerator;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class GameController extends Controller
 {
     public function index()
     {
         $games = Game::latest()->get();
-        return view('game.index', compact('games'));
+        return Inertia::render('Games/Index', [
+            'games' => $games,
+        ]);
     }
 
     public function show(Game $game)
@@ -20,22 +25,36 @@ class GameController extends Controller
         return view('game.show', compact('game'));
     }
 
-    public function generate()
+    public function generate(ImageGenerator $imageGenerator)
     {
         $generator = new WorldGenerator();
         $data = $generator->generate();
+        // Generate character matrix image
+        if (!empty($data['character'])) {
+            $imagePath = $imageGenerator->generateCharacterMatrix($data['character']);
+            if ($imagePath) {
+                $data['character']['image_path'] = $imagePath;
+            }
+        }
 
-        // Render the character sheet partial
-        $html = view('game.partials.character-sheet', [
-            'player' => $data['character'],
-            'world' => $data['world'],
-            'lore' => $data['world_lore'] ?? [],
-        ])->render();
+//        // Generate lore images
+        if (!empty($data['world_lore'])) {
+            $boxExplanation = [];
+            for ($i = 0; $i < 3; $i++) {
+                $boxExplanation[] = 'box '.($i+1).' - '.($data['world_lore'][$i]['image_prompt'] ?? 'Keep empty');
+            }
 
-        return response()->json([
-            'data' => $data,
-            'html' => $html,
-        ]);
+            $timeParts = explode(", ", $data['world']['time'] ?? []);
+            $timeDescription = $timeParts[0] ?? '[Not specified]';
+            $boxExplanation[3] = sprintf('box 4 - %s, %s. %s', $timeParts[0] ?? '', $timeParts[1] ?? '', $data['world']['universe_rules']);
+
+            $lorePath = $imageGenerator->generateLoreImage($boxExplanation, $timeDescription);
+            if ($lorePath) {
+                $data['world_lore_image_path'] = $lorePath;
+            }
+        }
+
+        return response()->json($data);
     }
 
     public function store(Request $request)
@@ -53,14 +72,28 @@ class GameController extends Controller
 //                'global_rules' => $data['world']['universe_rules'] ?? null,
             ]);
 
-            $game->world()->create([
+            $world = $game->world()->create([
                 'time' => $data['world']['time'] ?? null,
                 'universe_rules' => $data['world']['universe_rules'] ?? null,
                 'environment_description' => $data['world']['environment_description'] ?? null,
             ]);
 
+            // Create lore entries
+            foreach ($request->input('world_lore', []) as $loreItem) {
+                $lore = $world->lore()->create($loreItem);
+
+                // Save lore image if exists
+                if (!empty($loreItem['image_path'])) {
+                    Image::create([
+                        'image_path' => $loreItem['image_path'],
+                        'model' => 'App\Models\Lore',
+                        'model_id' => $lore->id,
+                    ]);
+                }
+            }
+
             $char = $data['character'];
-            $game->characters()->create([
+            $character = $game->characters()->create([
                 'is_player' => true,
                 'name' => $char['name'] ?? 'Unknown',
                 'info' => $char['info'] ?? null,
@@ -91,6 +124,15 @@ class GameController extends Controller
                 'chaotic_temperature' => $char['chaotic-temperature'] ?? $char['chaotic_temperature'] ?? 0,
                 'positive_temperature' => $char['positive-temperature'] ?? $char['positive_temperature'] ?? 0,
             ]);
+
+            // Save character image if exists
+            if (!empty($char['image_path'])) {
+                Image::create([
+                    'image_path' => $char['image_path'],
+                    'model' => 'App\Models\Character',
+                    'model_id' => $character->id,
+                ]);
+            }
 
             return response()->json([
                 'success' => true,
