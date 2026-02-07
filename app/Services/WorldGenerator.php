@@ -8,6 +8,7 @@ class WorldGenerator
 {
     private GeminiClient $client;
     private float $globalTemperature;
+    private array $character = [];
 
     public function __construct()
     {
@@ -17,7 +18,7 @@ class WorldGenerator
     public function generate(): array
     {
         ini_set('max_execution_time', 300);
-        $this->globalTemperature = abs((random_int(-100,100))/100);
+        $this->globalTemperature = abs((random_int(-100, 100)) / 100);
         $prompt = $this->buildPrompt();
 
 //        $this->client->setModel(GeminiClient::MODEL_PRO);
@@ -34,7 +35,7 @@ class WorldGenerator
             throw new \RuntimeException('Failed to parse LLM response as JSON: ' . $response->text);
         }
 
-        foreach($this->generateStats() as $key => $stat) {
+        foreach ($this->generateStats() as $key => $stat) {
             $json['character'][$key] = $stat;
         }
 
@@ -50,7 +51,7 @@ class WorldGenerator
 
     private function buildPrompt(): string
     {
-        $prompt =  <<<PROMPT
+        $prompt = <<<PROMPT
             Generate a new fantasy RPG game world and player character. Return JSON with exactly this structure:
             Be straight to the point, simple, cohisive, dont yap around the bush.
 
@@ -101,8 +102,12 @@ class WorldGenerator
                 - 37-78 - small town
                 - 79-100 - capital
 
+
             structure:
             {
+                "predefined_character": {
+                    %s
+                },
                 "character": {
                     "name": "full name",
                     "info": "About who they are, age, background. It can be simple background, it can be complex background. It can be short introduction. You can here apply temperature for more creativity. The bigger temperature the more absurd it can be",
@@ -117,7 +122,7 @@ class WorldGenerator
                     "secrets": "string - something they hide from others",
                     "limits": "string - lines they won't cross, weaknesses",
                     "intentions": "string - current short-term plans",
-                    "image_prompt": "Character overall view - how beautiful/ugly/fat/amazing looking must be in prompt. You can take the number out of "predefined_character_facial_features_and_overall_look". Not too long descriptive prompt about character how he or she or it looks like doing what they like to do or in action. Do not use language where you would need to know context to understand"
+                    "image_prompt": "Character's beautifulness/ugliness is set by predefined_character_facial_features_and_overall_look - describe accordingly. Not too long descriptive prompt about character how he or she or it looks like doing what they like to do or in action. Do not use language where you would need to know context to understand"
                     "chaotic_temperature": %.2f,
                     "positive_temperature": %.2f,
                     "lore_temperature": %.2f,
@@ -125,7 +130,7 @@ class WorldGenerator
                     "how_many_attributes-to-fill": %d
                     "attributes_to_fill": %s
                 },
-                "predefined_character_facial_features_and_overall_look" : %.2f out of 10,
+
                 "predefined_world": {
                     %s
                 }
@@ -163,20 +168,21 @@ class WorldGenerator
             Be creative but coherent. Make the character feel real with flaws and depth. The world should have interesting hooks for adventure.
             PROMPT;
 
-        $attributeCount =  $this->getAttributeCount();
+        $attributeCount = $this->getAttributeCount();
         $prompt = sprintf(
             $prompt,
-            random_int(-100,100)/100,
-            random_int(-100,100)/100,
-            abs(random_int(-100,100)/100)/2,
+            $this->getPredefinedCharacter(),
+            random_int(-100, 100) / 100,
+            random_int(-100, 100) / 100,
+            abs(random_int(-100, 100) / 100) / 2,
             $this->globalTemperature,
             $attributeCount,
             $this->getAttributeNames($attributeCount),
-            random_int(0,100)/10,
+            random_int(0, 100) / 10,
             $this->worldExplanationPredefined(),
             $this->getPredefinedLoreStats(),
         );
-
+        dd($prompt);
         return $prompt;
     }
 
@@ -185,16 +191,16 @@ class WorldGenerator
      */
     private function generateStats(): array
     {
-        $con = random_int(5,19);
+        $con = random_int(5, 19);
         $hp = $con * 2 + 10;
         return [
-            'str' => random_int(5,19),
-            'dex' => random_int(5,19),
+            'str' => random_int(5, 19),
+            'dex' => random_int(5, 19),
             'con' => $con,
-            'int' => random_int(5,19),
-            'wis' => random_int(5,19),
-            'cha' => random_int(5,19),
-            'hp' =>  $hp,
+            'int' => random_int(5, 19),
+            'wis' => random_int(5, 19),
+            'cha' => random_int(5, 19),
+            'hp' => $hp,
             'max_hp' => $hp,
             'trauma_severity' => random_int(1, 6),
             'goal_severity' => random_int(1, 6),
@@ -205,15 +211,15 @@ class WorldGenerator
 
     private function getAttributeCount(): int
     {
-        if($this->globalTemperature >= 0 && $this->globalTemperature <= 0.2){
-            return random_int(1,3);
+        if ($this->globalTemperature >= 0 && $this->globalTemperature <= 0.2) {
+            return random_int(1, 3);
         }
 
-        if($this->globalTemperature >= 0.21 && $this->globalTemperature <= .45){
-            return random_int(3,6);
+        if ($this->globalTemperature >= 0.21 && $this->globalTemperature <= .45) {
+            return random_int(3, 6);
         }
 
-        return random_int(7,11);
+        return random_int(7, 11);
     }
 
     public function getAttributeNames(int $amount): string
@@ -226,9 +232,10 @@ class WorldGenerator
     }
 
 
-    public function getPredefinedLoreStats(): string {
+    public function getPredefinedLoreStats(): string
+    {
         $lore = [];
-        for($i = 0; $i < 10; $i++){
+        for ($i = 0; $i < 10; $i++) {
             $lore[] = [
                 'description' => random_int(1, 100),
                 'known_how' => random_int(1, 100),
@@ -236,7 +243,7 @@ class WorldGenerator
                 'occurrence' => random_int(1, 100),
                 'grounding' => random_int(1, 100),
                 'chaos' => random_int(1, 100),
-            ] ;
+            ];
         }
 
         return json_encode($lore);
@@ -244,14 +251,105 @@ class WorldGenerator
 
     private function worldExplanationPredefined(): string
     {
-        $world =  [
-            'magic' => random_int(1,100),
-            'gods' => random_int(1,100),
-            'physics' => random_int(1,100),
-            'specific_rules' => random_int(1,100),
-            'current_location' => random_int(1,100),
+        $world = [
+            'magic' => random_int(1, 100),
+            'gods' => random_int(1, 100),
+            'physics' => random_int(1, 100),
+            'specific_rules' => random_int(1, 100),
+            'current_location' => random_int(1, 100),
         ];
 
         return json_encode($world);
+    }
+
+    private function getPredefinedCharacter(): string
+    {
+        // Return existing character if set
+        if (!empty($this->character)) {
+            return json_encode($this->character);
+        }
+
+        $races = [
+            'Human', 'Elf', 'Dwarf', 'Halfling', 'Dragonborn', 'Gnome',
+            'Half-Elf', 'Half-Orc', 'Tiefling', 'Aarakocra', 'Genasi',
+            'Gith', 'Tabaxi', 'Warforged'
+        ];
+
+        // 1. Generate Base Stats
+        $race = $races[array_rand($races)];
+        $muscle = random_int(1, 10);
+        $fat = random_int(1, 10);
+        $beauty = random_int(1, 10);
+
+        // 2. Derive Body Type Logic (The correlation matrix)
+        $bodyType = $this->calculateBodyType($muscle, $fat);
+
+        // 3. Derive Facial Logic
+        $face = $this->calculateFace($beauty);
+
+        // 4. Race Specific Logic (Nuance)
+        $distinctiveFeature = $this->getRaceFeature($race);
+
+        $characterData = [
+            'race' => $race,
+            'muscle_index' => $muscle,
+            'fat_index' => $fat,
+            'beauty_index' => $beauty,
+            'body_type' => $bodyType,
+            'facial_structure' => $face,
+            'distinctive_trait' => $distinctiveFeature,
+            'overall_summary' => "A {$bodyType} {$race} with {$face} features and {$distinctiveFeature}."
+        ];
+
+        return json_encode($characterData);
+    }
+
+    private function calculateBodyType(int $muscle, int $fat): string
+    {
+        // Low Muscle Logic
+        if ($muscle <= 3) {
+            if ($fat <= 3) return 'Gaunt / Skeletal';
+            if ($fat <= 6) return 'Scrawny / Soft';
+            return 'Doughy / Obese';
+        }
+
+        // Average Muscle Logic
+        if ($muscle <= 7) {
+            if ($fat <= 3) return 'Lean / Wiry';
+            if ($fat <= 6) return 'Average / Proportionate';
+            return 'Chubby / Stout';
+        }
+
+        // High Muscle Logic
+        if ($fat <= 3) return 'Ripped / Vascular';
+        if ($fat <= 6) return 'Athletic / Muscular';
+        return 'Burly / Powerlifter Build';
+    }
+
+    private function calculateFace(int $beauty): string
+    {
+        if ($beauty <= 3) {
+            $flaws = ['asymmetrical features', 'pockmarked skin', 'a broken nose', 'deep scarring'];
+            return 'Unattractive, defined by ' . $flaws[array_rand($flaws)];
+        }
+
+        if ($beauty <= 7) {
+            return 'Plain / Common looking';
+        }
+
+        $features = ['striking symmetry', 'piercing eyes', 'chiseled jawline', 'ethereal elegance'];
+        return 'Stunning, defined by ' . $features[array_rand($features)];
+    }
+
+    private function getRaceFeature(string $race): string
+    {
+        return match ($race) {
+            'Dragonborn' => 'scales of ' . ['bronze', 'green', 'red', 'silver', 'gold'][rand(0, 4)],
+            'Tiefling' => 'horns that are ' . ['curled like a ram', 'straight and pointed', 'broken'][rand(0, 2)],
+            'Warforged' => 'plating made of ' . ['polished steel', 'rusted iron', 'darkwood', 'stone'][rand(0, 3)],
+            'Tabaxi' => 'fur with a ' . ['calico', 'leopard spot', 'solid black', 'striped'][rand(0, 3)] . ' pattern',
+            'Aarakocra' => 'plumage resembling a ' . ['eagle', 'parrot', 'owl', 'crow'][rand(0, 3)],
+            default => 'distinctive ' . ['tattoos', 'scars', 'piercings', 'eye color'][rand(0, 3)],
+        };
     }
 }
