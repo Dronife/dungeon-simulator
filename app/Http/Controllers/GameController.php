@@ -46,7 +46,7 @@ class GameController extends Controller
 
             $timeParts = explode(", ", $data['world']['time'] ?? []);
             $timeDescription = $timeParts[0] ?? '[Not specified]';
-            $boxExplanation[3] = sprintf('box 4 - %s, %s. %s', $timeParts[0] ?? '', $timeParts[1] ?? '', $data['world']['universe_rules']);
+            $boxExplanation[3] = sprintf('box 4 - Portray town. Theme: %s, %s. %s', $timeParts[0] ?? '', $timeParts[1] ?? '', $data['world']['universe_rules']);
 
             $lorePath = $imageGenerator->generateLoreImage($boxExplanation, $timeDescription);
             if ($lorePath) {

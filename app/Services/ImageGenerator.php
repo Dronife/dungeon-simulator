@@ -25,11 +25,11 @@ class ImageGenerator
         $prompt = <<<PROMPT
 
             Character description: {$characterDescription}
-
-            Generate character. In the 'zxc' box it must be character concept art It can be with somekind of background. Boxes from 1-12 it is headshot of  that same character  slightly looking at right side. Boxes 1-12 are white background.
-            1 box is neautral, 2 box character has bruses, 3 box character has cuts and sweating and bruses, 4 box is a little bit dirty, cuts, bruses visually extremly tired. 5 box sweating and tired, 6 box is smiling, 7 box is bad mood, 8 box is scared, 9 box is confident. the rest of the boxes keep empty for now.
+            VERY IMPORTANT 1: the character matrix layout picture MUST be same as reference image. YOU ARE NOT ALLOWERD TO MOVE BOXES. IF FUCKING ZXC BOX IS IN RIGHT TOP YOU KEEP THAT BOX THERE AND JUST PAINT THE CHARACTER.
+            VERY IMPORTANT 2: NO TEXT FROM REFERENCE PHOTO
+            Generate character matrix in a style of Digital Painting . In the 'zxc' box it must be character concept art It can be with somekind of background. Boxes from 1-12 it is portrait(to the shoulders) of that same character slightly looking at right side. Boxes 1-12 are white background.
+            1 box is neautral, 2 box character has cuts and sweating and bruses, 3 box character has bruses, 4 box is a little bit dirty, cuts, bruses visually extremly tired. 5 box sweating and tired, 6 box is smiling, 7 box is bad mood, 8 box is scared, 9 box is confident. the rest of the boxes keep empty for now.
             All emotions not extreme they are at 40% intensity
-
             IMPORTANT: Numbers from reference picture must not be written.
             PROMPT;
 
@@ -39,7 +39,7 @@ class ImageGenerator
             throw new \RuntimeException("Template not found: {$templatePath}");
         }
 
-        $imageData = $this->client->generateImage($prompt, '1:1', $templatePath, GeminiClient::MODEL_IMAGE_PRO);
+        $imageData = $this->client->generateImage($prompt, '1:1', $templatePath, GeminiClient::MODEL_IMAGE_PRO, 1.0);
 
         if (!$imageData) {
             return null;
@@ -62,7 +62,7 @@ class ImageGenerator
 
         $imagePrompt = <<<PROMPT
 
-        Generate concept abstract art. for each individual boxes of reference image. Time is: {$timeDescription}
+        Generate concept painting/key art in a style of Digital Painting. for each individual boxes of reference image. Time is: {$timeDescription}
 
         {$loreItemsImploded}
 
@@ -76,7 +76,7 @@ class ImageGenerator
             throw new \RuntimeException("Template not found: {$templatePath}");
         }
 
-        $imageData = $this->client->generateImage($imagePrompt, '1:1', $templatePath, GeminiClient::MODEL_IMAGE_PRO);;
+        $imageData = $this->client->generateImage($imagePrompt, '1:1', $templatePath, GeminiClient::MODEL_IMAGE_PRO, 1.0);;
 
         if (!$imageData) {
             return null;

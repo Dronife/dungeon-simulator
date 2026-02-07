@@ -85,12 +85,12 @@ class GeminiClient
         );
     }
 
-    public function generateImage(string $prompt, string $aspectRatio = '1:1', ?string $imagePath = null, ?string $model = self::MODEL_IMAGE): ?string
+    public function generateImage(string $prompt, string $aspectRatio = '1:1', ?string $imagePath = null, ?string $model = self::MODEL_IMAGE, ?float $temperature = 0.15): ?string
     {
         $imageConfig = new ImageConfig(aspectRatio: $aspectRatio);
         $generationConfig = new GenerationConfig(
             maxOutputTokens: 32768,
-            temperature: 0.15,
+            temperature: $temperature,
             topP: 0.95,
             topK: 64,
             responseModalities: [ResponseModality::TEXT, ResponseModality::IMAGE],
