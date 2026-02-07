@@ -82,7 +82,7 @@ export default function Index({ games }) {
 
     return (
         <Layout>
-            <div className="px-4 py-6 h-[calc(100vh-60px)] flex flex-col">
+            <div className="px-4 py-6 h-[calc(100vh-60px)] flex flex-col overflow-hidden">
                 {/* Generate Button */}
                 {!generated && !generating && (
                     <>
@@ -148,11 +148,11 @@ export default function Index({ games }) {
 
                 {/* Generated Preview - Two Cards */}
                 {generated && !generating && (
-                    <div className="flex-1 flex flex-col gap-4">
+                    <div className="flex-1 flex flex-col items-center gap-3 min-h-0 overflow-hidden">
                         {/* Character Card - Top Half */}
                         <button
                             onClick={() => setCharacterDrawerOpen(true)}
-                            className="flex-1 bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-left hover:border-red-500/50 transition relative overflow-hidden"
+                            className="flex-1 min-h-0 aspect-square max-w-full bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-left hover:border-red-500/50 transition relative overflow-hidden"
                         >
                             {/* Background image - ZXC cell */}
                             {generated.character?.image_path && (
@@ -183,7 +183,7 @@ export default function Index({ games }) {
                         {/* World Card - Bottom Half */}
                         <button
                             onClick={() => setWorldDrawerOpen(true)}
-                            className="flex-1 bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-left hover:border-red-500/50 transition relative overflow-hidden"
+                            className="flex-1 min-h-0 aspect-square max-w-full bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-left hover:border-red-500/50 transition relative overflow-hidden"
                         >
                             {/* Background image - lore cell 4 */}
                             {generated.world_lore_image_path && (
@@ -221,7 +221,7 @@ export default function Index({ games }) {
                         </button>
 
                         {/* Action Buttons */}
-                        <div className="flex gap-3 pt-2">
+                        <div className="flex gap-3 shrink-0 w-full self-stretch">
                             <button
                                 onClick={handleStartGame}
                                 className="flex-1 py-3 bg-red-600 hover:bg-red-700 rounded-xl font-semibold transition"
