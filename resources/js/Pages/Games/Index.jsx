@@ -8,6 +8,9 @@ export default function Index({ games }) {
     const [error, setError] = useState(null);
     const [characterDrawerOpen, setCharacterDrawerOpen] = useState(false);
     const [worldDrawerOpen, setWorldDrawerOpen] = useState(false);
+    const [showChoiceModal, setShowChoiceModal] = useState(false);
+    const [customizeMode, setCustomizeMode] = useState(null); // 'ai' | 'custom' | null
+    const [characterAppearance, setCharacterAppearance] = useState(null);
 
     // Load from localStorage on mount
     useEffect(() => {
@@ -19,6 +22,16 @@ export default function Index({ games }) {
                 localStorage.removeItem('dnd_generated');
             }
         }
+
+        const appearance = localStorage.getItem('dnd_character_appearance');
+        if (appearance) {
+            try {
+                setCharacterAppearance(JSON.parse(appearance));
+                setCustomizeMode('custom');
+            } catch (e) {
+                localStorage.removeItem('dnd_character_appearance');
+            }
+        }
     }, []);
 
     // Save to localStorage when generated
@@ -28,24 +41,19 @@ export default function Index({ games }) {
         }
     }, [generated]);
 
-    const handleGenerate = async () => {
-        setGenerating(true);
-        setError(null);
+    const handleGenerate = () => {
+        setShowChoiceModal(true);
+    };
 
-        try {
-            const response = await fetch('/game/generate');
-            const result = await response.json();
+    const handleChoiceAI = () => {
+        setShowChoiceModal(false);
+        setCustomizeMode('ai');
+    };
 
-            if (response.ok) {
-                setGenerated(result.data || result);
-            } else {
-                throw new Error(result.message || 'Generation failed');
-            }
-        } catch (err) {
-            setError(err.message);
-        } finally {
-            setGenerating(false);
-        }
+    const handleChoiceCustom = () => {
+        setShowChoiceModal(false);
+        setCustomizeMode('custom');
+        localStorage.setItem('dnd_custom_character', 'true');
     };
 
     const handleStartGame = async () => {
@@ -77,14 +85,18 @@ export default function Index({ games }) {
 
     const handleDiscard = () => {
         setGenerated(null);
+        setCustomizeMode(null);
+        setCharacterAppearance(null);
         localStorage.removeItem('dnd_generated');
+        localStorage.removeItem('dnd_character_appearance');
+        localStorage.removeItem('dnd_custom_character');
     };
 
     return (
         <Layout>
             <div className="px-4 py-6 h-[calc(100vh-60px)] flex flex-col overflow-hidden">
                 {/* Generate Button */}
-                {!generated && !generating && (
+                {!generated && !generating && !customizeMode && (
                     <>
                         <button
                             onClick={handleGenerate}
@@ -245,6 +257,112 @@ export default function Index({ games }) {
                     </div>
                 )}
 
+                {/* Customize Mode - Two Cards with loading/custom states */}
+                {customizeMode && !generated && (
+                    <div className="flex-1 flex flex-col items-center gap-3 min-h-0 overflow-hidden">
+                        {/* Character Card */}
+                        {customizeMode === 'ai' ? (
+                            <LoadingCard
+                                icon="fa-user"
+                                label="Character"
+                                messages={[
+                                    'Setting up race',
+                                    'Calculating age',
+                                    'Setting up backstory',
+                                    'Setting up goals',
+                                    'Creating secrets',
+                                ]}
+                                duration={30}
+                            />
+                        ) : characterAppearance ? (
+                            <div className="flex-1 min-h-0 aspect-square max-w-full bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-left relative overflow-hidden">
+                                <PaperDollPreview appearance={characterAppearance} />
+                                <div className="absolute bottom-4 left-4 right-4">
+                                    <div className="flex items-center gap-2 text-zinc-300 text-xs uppercase tracking-wide mb-1">
+                                        <i className="fa-solid fa-user"></i>
+                                        <span>Character</span>
+                                    </div>
+                                    <p className="text-red-500 font-semibold">Custom Character</p>
+                                </div>
+                            </div>
+                        ) : (
+                            <a
+                                href="/game/character-builder"
+                                className="flex-1 min-h-0 aspect-square max-w-full bg-zinc-900 border border-zinc-800 border-dashed rounded-xl p-4 flex flex-col items-center justify-center hover:border-red-500/50 transition"
+                            >
+                                <i className="fa-solid fa-user-pen text-4xl text-zinc-600 mb-3"></i>
+                                <p className="text-zinc-400 font-semibold">Customize Character</p>
+                                <p className="text-zinc-600 text-sm mt-1">Tap to open builder</p>
+                            </a>
+                        )}
+
+                        {/* World Card */}
+                        <LoadingCard
+                            icon="fa-globe"
+                            label="World"
+                            messages={[
+                                'Coming up with time and place',
+                                'Setting physics rules',
+                                'Calculating magic use',
+                                'Writing up lore',
+                                'Drawing the map',
+                            ]}
+                            duration={30}
+                        />
+
+                        {/* Action Buttons */}
+                        <div className="flex gap-3 shrink-0 w-full self-stretch">
+                            <button
+                                disabled
+                                className="flex-1 py-3 bg-zinc-700 rounded-xl font-semibold transition opacity-50 cursor-not-allowed"
+                            >
+                                <i className="fa-solid fa-hourglass-half mr-2"></i>
+                                Generating...
+                            </button>
+                            <button
+                                onClick={handleDiscard}
+                                className="px-4 py-3 bg-zinc-800 hover:bg-zinc-700 rounded-xl transition"
+                            >
+                                <i className="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* Choice Modal */}
+                {showChoiceModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center">
+                        <div
+                            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+                            onClick={() => setShowChoiceModal(false)}
+                        ></div>
+                        <div className="relative bg-zinc-900 border border-zinc-800 rounded-xl p-6 mx-4 max-w-sm w-full">
+                            <h2 className="text-lg font-semibold text-center mb-2">
+                                Create Your Character
+                            </h2>
+                            <p className="text-zinc-400 text-sm text-center mb-6">
+                                Do you want to customize your character yourself?
+                            </p>
+                            <div className="flex flex-col gap-3">
+                                <button
+                                    onClick={handleChoiceCustom}
+                                    className="w-full py-3 bg-red-600 hover:bg-red-700 rounded-xl font-semibold transition"
+                                >
+                                    <i className="fa-solid fa-paintbrush mr-2"></i>
+                                    I'll create my own
+                                </button>
+                                <button
+                                    onClick={handleChoiceAI}
+                                    className="w-full py-3 bg-zinc-800 hover:bg-zinc-700 rounded-xl font-semibold transition"
+                                >
+                                    <i className="fa-solid fa-wand-magic-sparkles mr-2"></i>
+                                    Let AI decide
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* Character Drawer - slides from left */}
                 <Drawer isOpen={characterDrawerOpen} onClose={() => setCharacterDrawerOpen(false)} title="Character" direction="left">
                     {generated?.character && (
@@ -264,6 +382,109 @@ export default function Index({ games }) {
                 </Drawer>
             </div>
         </Layout>
+    );
+}
+
+function LoadingCard({ icon, label, messages, duration = 30 }) {
+    const [currentMessage, setCurrentMessage] = useState(0);
+    const [progress, setProgress] = useState(0);
+
+    // Cycle through messages at random intervals
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setCurrentMessage(prev => (prev + 1) % messages.length);
+        }, 2000 + Math.random() * 2000);
+        return () => clearInterval(interval);
+    }, [messages.length]);
+
+    // Progress bar fills over the given duration
+    useEffect(() => {
+        const startTime = Date.now();
+        const totalMs = duration * 1000;
+
+        const interval = setInterval(() => {
+            const elapsed = Date.now() - startTime;
+            const pct = Math.min((elapsed / totalMs) * 100, 95);
+            setProgress(pct);
+        }, 200);
+
+        return () => clearInterval(interval);
+    }, [duration]);
+
+    return (
+        <div className="flex-1 min-h-0 aspect-square max-w-full bg-zinc-900 border border-zinc-800 rounded-xl p-4 flex flex-col justify-between relative overflow-hidden">
+            <div className="flex items-center gap-2 text-zinc-300 text-xs uppercase tracking-wide">
+                <i className={`fa-solid ${icon}`}></i>
+                <span>{label}</span>
+            </div>
+
+            <div className="flex-1 flex items-center justify-center">
+                <div className="text-center">
+                    <i className="fa-solid fa-spinner fa-spin text-3xl text-red-500 mb-3"></i>
+                    <p className="text-zinc-400 text-sm transition-opacity duration-300">
+                        {messages[currentMessage]}...
+                    </p>
+                </div>
+            </div>
+
+            {/* Progress bar */}
+            <div className="w-full bg-zinc-800 rounded-full h-1.5">
+                <div
+                    className="bg-red-600 h-1.5 rounded-full transition-all duration-500 ease-out"
+                    style={{ width: `${progress}%` }}
+                ></div>
+            </div>
+        </div>
+    );
+}
+
+function PaperDollPreview({ appearance, className = '' }) {
+    const basePath = '/images/character_compose/male';
+    const hairFilter = appearance.hairColor
+        ? `hue-rotate(${appearance.hairColor.hue}deg) saturate(${appearance.hairColor.saturate}%) brightness(${appearance.hairColor.brightness}%)`
+        : 'none';
+
+    return (
+        <div className={`relative w-full h-full ${className}`}>
+            {/* Layer 1: Back hair */}
+            <img
+                src={`${basePath}/hairstyle/back_${appearance.hairBack}.png`}
+                className="absolute inset-0 w-full h-full object-contain"
+                style={{ filter: hairFilter }}
+                alt=""
+            />
+            {/* Layer 2: Base body */}
+            <img
+                src={`${basePath}/base/normal.png`}
+                className="absolute inset-0 w-full h-full object-contain"
+                alt=""
+            />
+            {/* Layer 3: Facial features */}
+            <img
+                src={`${basePath}/facial.png`}
+                className="absolute inset-0 w-full h-full object-contain"
+                alt=""
+            />
+            {/* Layer 4: Outfit */}
+            <img
+                src={`${basePath}/outfit/outfit_${appearance.outfit}.png`}
+                className="absolute inset-0 w-full h-full object-contain"
+                alt=""
+            />
+            {/* Layer 5: Hair shadow */}
+            <img
+                src={`${basePath}/hairstyle/shadow/front_${appearance.hairFront}.png`}
+                className="absolute inset-0 w-full h-full object-contain"
+                alt=""
+            />
+            {/* Layer 6: Front hair */}
+            <img
+                src={`${basePath}/hairstyle/front_${appearance.hairFront}.png`}
+                className="absolute inset-0 w-full h-full object-contain"
+                style={{ filter: hairFilter }}
+                alt=""
+            />
+        </div>
     );
 }
 
