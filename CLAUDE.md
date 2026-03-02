@@ -69,3 +69,36 @@ PLAYING: Player input → pre-rolled dice → LLM Manager decides stakes → NPC
 ### Project-Specific Decisions
 - **Each trait/field can be manual or AI-generated** — user opts in per field, not all-or-nothing.
 - **Wizard (step-by-step) is for one-time onboarding only.** For freely editable builders, use the single-screen category pattern instead.
+
+## Character Builder (`Games/CharacterBuilder.jsx`)
+
+### Layout
+Uses the mobile game category-based single-screen pattern with 3 zones:
+1. **Character Preview** (flex-1) — 6-layer composited character (back hair → base → facial → outfit → hair shadow → front hair), all with CSS filters for hair color
+2. **Icon Strip** (shrink-0) — 5 category buttons: Hair (`fa-scissors`), Outfit (`fa-shirt`), Color (`fa-palette`), Bio (`fa-id-card`), Sheet (`fa-scroll`). Active = `text-red-500`, inactive = `text-zinc-500`
+3. **Options Panel** (shrink-0, max-h-[40vh], scrollable inside) — renders the active category's panel + Finished button
+
+### Category Panels
+- **HairPanel** — 2x2 grid of hair combo thumbnails (front × back variants)
+- **OutfitPanel** — 3-column grid of outfit thumbnails
+- **ColorPanel** — row of color swatches (`w-11 h-11` for 44px touch targets)
+- **BioPanel** — Identity fields: name + surname (full-width, stacked, each with wand button), age + gender side-by-side (age = number input, gender = pill buttons), race as 3-column grid. Unavailable options (female, non-human races) show "Soon" inline and are disabled
+- **SheetPanel** — 11 trait fields (personality, traits, trauma, hobbies, routines, job, skills, goals, secrets, limits, intentions). Each has a text input + wand button (`fa-wand-magic-sparkles`) that calls `POST /api/character/generate-trait` to AI-generate that single field via Gemini
+
+### State & Persistence
+- Appearance (hair, outfit, color) saved to `localStorage('dnd_character_appearance')`
+- Traits saved to `localStorage('dnd_character_traits')`
+- Both are loaded back on mount so the builder preserves state across visits
+- "Finished" button saves both and redirects to `/game`
+
+### Backend Trait Generation
+- **Route:** `POST /api/character/generate-trait` → `GameController@generateTrait`
+- Accepts `{ field, existing_traits }`, validates field name against allowed list (name, surname + 11 trait fields)
+- Name/surname generation uses race and gender context for thematic names (one word only)
+- Other traits: builds context from existing traits, calls `GeminiClient::generate()` with creative RPG prompt (1-2 sentences)
+- Returns `{ field, value }` — single trait at a time
+
+### Integration with Index.jsx
+- The concept art character card in customize mode is an `<a href="/game/character-builder">` so users can tap to re-edit
+- On game start (`handleStartGame`), traits from localStorage are merged into the character data sent to the backend
+- `handleDiscard` clears both appearance and traits from localStorage
