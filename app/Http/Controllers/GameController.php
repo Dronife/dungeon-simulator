@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Game;
 use App\Models\Image;
+use App\Clients\GeminiClient;
 use App\Services\ImageGenerator;
 use App\Services\WorldGenerator;
 use Illuminate\Http\Request;
@@ -145,6 +146,46 @@ class GameController extends Controller
                 'message' => $e->getMessage(),
             ], 500);
         }
+    }
+
+    public function generateTrait(Request $request)
+    {
+        $request->validate([
+            'field' => 'required|string|in:name,surname,personality,traits,trauma,hobbies,routines,job,skills,goals,secrets,limits,intentions',
+            'existing_traits' => 'nullable|array',
+        ]);
+
+        $field = $request->input('field');
+        $existingTraits = $request->input('existing_traits', []);
+
+        $context = collect($existingTraits)
+            ->filter()
+            ->map(fn($v, $k) => ucfirst($k) . ': ' . $v)
+            ->implode("\n");
+
+        if (in_array($field, ['name', 'surname'])) {
+            $race = $existingTraits['race'] ?? 'human';
+            $gender = $existingTraits['gender'] ?? 'male';
+            $prompt = "Generate a single fantasy RPG {$field} for a {$gender} {$race} character.";
+            if ($context) {
+                $prompt .= "\n\nExisting character details:\n{$context}";
+            }
+            $prompt .= "\n\nRespond with ONLY the {$field}, nothing else. One word only.";
+        } else {
+            $prompt = "Generate a short, creative {$field} for a fantasy RPG character.";
+            if ($context) {
+                $prompt .= "\n\nExisting character traits for context:\n{$context}";
+            }
+            $prompt .= "\n\nRespond with ONLY the trait value, no labels or explanation. Keep it to 1-2 sentences.";
+        }
+
+        $client = new GeminiClient();
+        $response = $client->generate($prompt, 'You are a creative fantasy RPG character designer.', 0.9);
+
+        return response()->json([
+            'field' => $field,
+            'value' => trim($response->text),
+        ]);
     }
 
     public function destroy(Game $game)

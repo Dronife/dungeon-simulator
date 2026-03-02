@@ -11,6 +11,7 @@ export default function Index({ games }) {
     const [showChoiceModal, setShowChoiceModal] = useState(false);
     const [customizeMode, setCustomizeMode] = useState(null); // 'ai' | 'custom' | null
     const [characterAppearance, setCharacterAppearance] = useState(null);
+    const [characterTraits, setCharacterTraits] = useState(null);
 
     // Load from localStorage on mount
     useEffect(() => {
@@ -30,6 +31,15 @@ export default function Index({ games }) {
                 setCustomizeMode('custom');
             } catch (e) {
                 localStorage.removeItem('dnd_character_appearance');
+            }
+        }
+
+        const traits = localStorage.getItem('dnd_character_traits');
+        if (traits) {
+            try {
+                setCharacterTraits(JSON.parse(traits));
+            } catch (e) {
+                localStorage.removeItem('dnd_character_traits');
             }
         }
     }, []);
@@ -60,6 +70,11 @@ export default function Index({ games }) {
         if (!generated) return;
 
         try {
+            const payload = { ...generated };
+            if (characterTraits && payload.character) {
+                payload.character = { ...payload.character, ...characterTraits };
+            }
+
             const response = await fetch('/game', {
                 method: 'POST',
                 headers: {
@@ -67,7 +82,7 @@ export default function Index({ games }) {
                     'Accept': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
                 },
-                body: JSON.stringify(generated),
+                body: JSON.stringify(payload),
             });
 
             const data = await response.json();
@@ -87,8 +102,10 @@ export default function Index({ games }) {
         setGenerated(null);
         setCustomizeMode(null);
         setCharacterAppearance(null);
+        setCharacterTraits(null);
         localStorage.removeItem('dnd_generated');
         localStorage.removeItem('dnd_character_appearance');
+        localStorage.removeItem('dnd_character_traits');
         localStorage.removeItem('dnd_custom_character');
     };
 
@@ -275,7 +292,10 @@ export default function Index({ games }) {
                                 duration={30}
                             />
                         ) : characterAppearance ? (
-                            <div className="flex-1 min-h-0 aspect-square max-w-full bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-left relative overflow-hidden">
+                            <a
+                                href="/game/character-builder"
+                                className="flex-1 min-h-0 aspect-square max-w-full bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-left relative overflow-hidden hover:border-red-500/50 transition block"
+                            >
                                 <ConceptArtPreview appearance={characterAppearance} className="absolute inset-0" />
                                 <div className="absolute inset-0 bg-gradient-to-r from-[#3d0d09]/50  to-black/90"></div>
                                 <div className="relative">
@@ -284,8 +304,9 @@ export default function Index({ games }) {
                                         <span>Character</span>
                                     </div>
                                     <p className="text-red-500 font-semibold">Custom Character</p>
+                                    <p className="text-zinc-500 text-xs mt-1">Tap to edit</p>
                                 </div>
-                            </div>
+                            </a>
                         ) : (
                             <a
                                 href="/game/character-builder"
