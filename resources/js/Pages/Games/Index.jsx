@@ -276,9 +276,10 @@ export default function Index({ games }) {
                             />
                         ) : characterAppearance ? (
                             <div className="flex-1 min-h-0 aspect-square max-w-full bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-left relative overflow-hidden">
-                                <PaperDollPreview appearance={characterAppearance} />
-                                <div className="absolute bottom-4 left-4 right-4">
-                                    <div className="flex items-center gap-2 text-zinc-300 text-xs uppercase tracking-wide mb-1">
+                                <ConceptArtPreview appearance={characterAppearance} className="absolute inset-0" />
+                                <div className="absolute inset-0 bg-gradient-to-r from-[#3d0d09]/50  to-black/90"></div>
+                                <div className="relative">
+                                    <div className="flex items-center gap-2 text-zinc-300 text-xs uppercase tracking-wide mb-2">
                                         <i className="fa-solid fa-user"></i>
                                         <span>Character</span>
                                     </div>
@@ -438,53 +439,33 @@ function LoadingCard({ icon, label, messages, duration = 30 }) {
     );
 }
 
-function PaperDollPreview({ appearance, className = '' }) {
-    const basePath = '/images/character_compose/male';
+function ConceptArtPreview({ appearance, className = '' }) {
+    const basePath = '/images/character_compose/male/concept_art';
+    const artFile = `outfit_${appearance.outfit}_front_${appearance.hairFront}_back_${appearance.hairBack}`;
     const hairFilter = appearance.hairColor
         ? `hue-rotate(${appearance.hairColor.hue}deg) saturate(${appearance.hairColor.saturate}%) brightness(${appearance.hairColor.brightness}%)`
         : 'none';
 
     return (
-        <div className={`relative w-full h-full ${className}`}>
-            {/* Layer 1: Back hair */}
-            <img
-                src={`${basePath}/hairstyle/back_${appearance.hairBack}.png`}
-                className="absolute inset-0 w-full h-full object-contain"
-                style={{ filter: hairFilter }}
-                alt=""
+        <>
+            <div
+                className={`bg-zinc-700 ${className}`}
+                style={{
+                    backgroundImage: `url(${basePath}/${artFile}.png)`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                }}
             />
-            {/* Layer 2: Base body */}
-            <img
-                src={`${basePath}/base/normal.png`}
-                className="absolute inset-0 w-full h-full object-contain"
-                alt=""
+            <div
+                className={`${className}`}
+                style={{
+                    backgroundImage: `url(${basePath}/hair_cutout/${artFile}_hair.png)`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    filter: hairFilter,
+                }}
             />
-            {/* Layer 3: Facial features */}
-            <img
-                src={`${basePath}/facial.png`}
-                className="absolute inset-0 w-full h-full object-contain"
-                alt=""
-            />
-            {/* Layer 4: Outfit */}
-            <img
-                src={`${basePath}/outfit/outfit_${appearance.outfit}.png`}
-                className="absolute inset-0 w-full h-full object-contain"
-                alt=""
-            />
-            {/* Layer 5: Hair shadow */}
-            <img
-                src={`${basePath}/hairstyle/shadow/front_${appearance.hairFront}.png`}
-                className="absolute inset-0 w-full h-full object-contain"
-                alt=""
-            />
-            {/* Layer 6: Front hair */}
-            <img
-                src={`${basePath}/hairstyle/front_${appearance.hairFront}.png`}
-                className="absolute inset-0 w-full h-full object-contain"
-                style={{ filter: hairFilter }}
-                alt=""
-            />
-        </div>
+        </>
     );
 }
 
