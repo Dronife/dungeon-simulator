@@ -75,21 +75,23 @@ PLAYING: Player input → pre-rolled dice → LLM Manager decides stakes → NPC
 ### Layout
 Uses the mobile game category-based single-screen pattern with 3 zones:
 1. **Character Preview** (flex-1) — 6-layer composited character (back hair → base → facial → outfit → hair shadow → front hair), all with CSS filters for hair color
-2. **Icon Strip** (shrink-0) — 5 category buttons in order: Bio (`fa-id-card`), Sheet (`fa-scroll`), Hair (`fa-scissors`), Outfit (`fa-shirt`), Color (`fa-palette`). Active = `text-red-500`, inactive = `text-zinc-500`. Default tab is Bio.
+2. **Icon Strip** (shrink-0) — 6 category buttons in order: Bio (`fa-id-card`), Stats (`fa-dice-d20`), Sheet (`fa-scroll`), Hair (`fa-scissors`), Outfit (`fa-shirt`), Color (`fa-palette`). Active = `text-red-500`, inactive = `text-zinc-500`. Default tab is Bio.
 3. **Options Panel** (shrink-0, max-h-[45vh], flex column) — scrollable content area on top, Finished button pinned at bottom outside the scroll area (always visible on every tab)
 
 ### Category Panels
+- **BioPanel** — Identity fields: name + surname (full-width, stacked, each with wand button), age + gender side-by-side (age = number input, gender = pill buttons), race as 3-column grid. Unavailable options (female, non-human races) show "Soon" inline and are disabled
+- **StatsPanel** — 3×2 grid of stat cards (STR, DEX, CON, INT, WIS, CHA). Each card is tapped individually to roll (number shuffles ~800ms via setInterval, lands on 5–19). Re-rolling any stat resets all 6 ("Reset All" button). HP auto-calculated from CON (`con * 2 + 10`) shown below grid after CON is rolled.
+- **SheetPanel** — 11 trait fields (personality, traits, trauma, hobbies, routines, job, skills, goals, secrets, limits, intentions). Each has a text input + wand button (`fa-wand-magic-sparkles`) that calls `POST /api/character/generate-trait` to AI-generate that single field via Gemini
 - **HairPanel** — 2x2 grid of hair combo thumbnails (front × back variants)
 - **OutfitPanel** — 3-column grid of outfit thumbnails
 - **ColorPanel** — row of color swatches (`w-11 h-11` for 44px touch targets)
-- **BioPanel** — Identity fields: name + surname (full-width, stacked, each with wand button), age + gender side-by-side (age = number input, gender = pill buttons), race as 3-column grid. Unavailable options (female, non-human races) show "Soon" inline and are disabled
-- **SheetPanel** — 11 trait fields (personality, traits, trauma, hobbies, routines, job, skills, goals, secrets, limits, intentions). Each has a text input + wand button (`fa-wand-magic-sparkles`) that calls `POST /api/character/generate-trait` to AI-generate that single field via Gemini
 
 ### State & Persistence
 - Appearance (hair, outfit, color) saved to `localStorage('dnd_character_appearance')`
 - Traits saved to `localStorage('dnd_character_traits')`
-- Both are loaded back on mount so the builder preserves state across visits
-- "Finished" button saves both and redirects to `/game`
+- Stats saved to `localStorage('dnd_character_stats')` — object with `{ str, dex, con, int, wis, cha }` (null = unrolled)
+- All are loaded back on mount so the builder preserves state across visits
+- "Finished" button saves all three and redirects to `/game`
 
 ### Backend Trait Generation
 - **Route:** `POST /api/character/generate-trait` → `GameController@generateTrait`
@@ -100,5 +102,5 @@ Uses the mobile game category-based single-screen pattern with 3 zones:
 
 ### Integration with Index.jsx
 - The concept art character card in customize mode is an `<a href="/game/character-builder">` so users can tap to re-edit
-- On game start (`handleStartGame`), traits from localStorage are merged into the character data sent to the backend
-- `handleDiscard` clears both appearance and traits from localStorage
+- On game start (`handleStartGame`), traits and stats from localStorage are merged into the character data sent to the backend
+- `handleDiscard` clears appearance, traits, and stats from localStorage

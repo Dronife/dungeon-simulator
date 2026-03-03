@@ -12,6 +12,7 @@ export default function Index({ games }) {
     const [customizeMode, setCustomizeMode] = useState(null); // 'ai' | 'custom' | null
     const [characterAppearance, setCharacterAppearance] = useState(null);
     const [characterTraits, setCharacterTraits] = useState(null);
+    const [characterStats, setCharacterStats] = useState(null);
 
     // Load from localStorage on mount
     useEffect(() => {
@@ -40,6 +41,15 @@ export default function Index({ games }) {
                 setCharacterTraits(JSON.parse(traits));
             } catch (e) {
                 localStorage.removeItem('dnd_character_traits');
+            }
+        }
+
+        const stats = localStorage.getItem('dnd_character_stats');
+        if (stats) {
+            try {
+                setCharacterStats(JSON.parse(stats));
+            } catch (e) {
+                localStorage.removeItem('dnd_character_stats');
             }
         }
     }, []);
@@ -74,6 +84,9 @@ export default function Index({ games }) {
             if (characterTraits && payload.character) {
                 payload.character = { ...payload.character, ...characterTraits };
             }
+            if (characterStats && payload.character) {
+                payload.character = { ...payload.character, ...characterStats };
+            }
 
             const response = await fetch('/game', {
                 method: 'POST',
@@ -103,9 +116,11 @@ export default function Index({ games }) {
         setCustomizeMode(null);
         setCharacterAppearance(null);
         setCharacterTraits(null);
+        setCharacterStats(null);
         localStorage.removeItem('dnd_generated');
         localStorage.removeItem('dnd_character_appearance');
         localStorage.removeItem('dnd_character_traits');
+        localStorage.removeItem('dnd_character_stats');
         localStorage.removeItem('dnd_custom_character');
     };
 
