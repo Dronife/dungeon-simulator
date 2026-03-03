@@ -27,11 +27,15 @@ const SWATCH_COLORS = {
 
 const CATEGORIES = [
     { key: 'bio',    icon: 'fa-id-card',  label: 'Bio' },
+    { key: 'stats',  icon: 'fa-dice-d20', label: 'Stats' },
     { key: 'sheet',  icon: 'fa-scroll',   label: 'Sheet' },
     { key: 'hair',   icon: 'fa-scissors', label: 'Hair' },
     { key: 'outfit', icon: 'fa-shirt',    label: 'Outfit' },
     { key: 'color',  icon: 'fa-palette',  label: 'Color' },
 ];
+
+const STAT_KEYS = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
+const STAT_LABELS = { str: 'STR', dex: 'DEX', con: 'CON', int: 'INT', wis: 'WIS', cha: 'CHA' };
 
 const GENDER_OPTIONS = [
     { key: 'male',   label: 'Male',   icon: 'fa-mars',   available: true },
@@ -72,6 +76,8 @@ export default function CharacterBuilder() {
         job: '', skills: '', goals: '', secrets: '', limits: '', intentions: '',
     });
     const [generatingField, setGeneratingField] = useState(null);
+    const [stats, setStats] = useState({ str: null, dex: null, con: null, int: null, wis: null, cha: null });
+    const [rollingStatKey, setRollingStatKey] = useState(null);
 
     // Load saved state on mount
     useEffect(() => {
@@ -98,6 +104,13 @@ export default function CharacterBuilder() {
                 setTraits(prev => ({ ...prev, ...JSON.parse(savedTraits) }));
             } catch (e) {}
         }
+
+        const savedStats = localStorage.getItem('dnd_character_stats');
+        if (savedStats) {
+            try {
+                setStats(prev => ({ ...prev, ...JSON.parse(savedStats) }));
+            } catch (e) {}
+        }
     }, []);
 
     const hairColor = HAIR_COLORS[hairColorIndex];
@@ -119,6 +132,13 @@ export default function CharacterBuilder() {
         );
         if (Object.keys(nonEmptyTraits).length > 0) {
             localStorage.setItem('dnd_character_traits', JSON.stringify(nonEmptyTraits));
+        }
+
+        const nonNullStats = Object.fromEntries(
+            Object.entries(stats).filter(([, v]) => v !== null)
+        );
+        if (Object.keys(nonNullStats).length > 0) {
+            localStorage.setItem('dnd_character_stats', JSON.stringify(nonNullStats));
         }
 
         window.location.href = '/game';
@@ -201,6 +221,14 @@ export default function CharacterBuilder() {
                         {activeCategory === 'color' && (
                             <ColorPanel hairColorIndex={hairColorIndex} setHairColorIndex={setHairColorIndex} />
                         )}
+                        {activeCategory === 'stats' && (
+                            <StatsPanel
+                                stats={stats}
+                                setStats={setStats}
+                                rollingStatKey={rollingStatKey}
+                                setRollingStatKey={setRollingStatKey}
+                            />
+                        )}
                         {activeCategory === 'bio' && (
                             <BioPanel
                                 traits={traits}
@@ -232,6 +260,105 @@ export default function CharacterBuilder() {
                 </div>
             </div>
         </Layout>
+    );
+}
+
+function StatsPanel({ stats, setStats, rollingStatKey, setRollingStatKey }) {
+    const calcMod = (val) => {
+        const mod = Math.floor((val - 10) / 2);
+        return mod >= 0 ? `+${mod}` : `${mod}`;
+    };
+
+    const anyRolled = STAT_KEYS.some(k => stats[k] !== null);
+
+    const handleRollStat = (key) => {
+        if (stats[key] !== null || rollingStatKey !== null) return;
+        setRollingStatKey(key);
+
+        const duration = 800;
+        const intervalMs = 50;
+        const startTime = Date.now();
+
+        const interval = setInterval(() => {
+            const randomVal = Math.floor(Math.random() * 15) + 5; // 5-19
+            setStats(prev => ({ ...prev, [key]: randomVal }));
+
+            if (Date.now() - startTime >= duration) {
+                clearInterval(interval);
+                const finalVal = Math.floor(Math.random() * 15) + 5;
+                setStats(prev => ({ ...prev, [key]: finalVal }));
+                setRollingStatKey(null);
+            }
+        }, intervalMs);
+    };
+
+    const handleReset = () => {
+        if (rollingStatKey !== null) return;
+        setStats({ str: null, dex: null, con: null, int: null, wis: null, cha: null });
+    };
+
+    return (
+        <div>
+            <div className="flex items-center justify-between mb-2">
+                <h3 className="text-zinc-300 text-xs uppercase tracking-wide">
+                    <i className="fa-solid fa-dice-d20 mr-2"></i>Attributes
+                </h3>
+                {anyRolled && (
+                    <button
+                        onClick={handleReset}
+                        disabled={rollingStatKey !== null}
+                        className="text-xs text-zinc-500 hover:text-red-500 transition disabled:opacity-50"
+                    >
+                        <i className="fa-solid fa-rotate-left mr-1"></i>Reset All
+                    </button>
+                )}
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+                {STAT_KEYS.map(key => {
+                    const value = stats[key];
+                    const isRolling = rollingStatKey === key;
+                    const isUnrolled = value === null && !isRolling;
+                    const isRolled = value !== null && !isRolling;
+
+                    return (
+                        <button
+                            key={key}
+                            onClick={() => handleRollStat(key)}
+                            disabled={!isUnrolled || rollingStatKey !== null}
+                            className={`flex flex-col items-center justify-center py-3 rounded-lg border transition ${
+                                isUnrolled && rollingStatKey === null
+                                    ? 'bg-zinc-800 border-zinc-700 hover:border-red-500/50 cursor-pointer animate-pulse'
+                                    : isRolling
+                                        ? 'bg-zinc-800 border-red-500 cursor-default'
+                                        : 'bg-zinc-800 border-zinc-700 cursor-default'
+                            }`}
+                        >
+                            <span className="text-[10px] text-zinc-400 uppercase tracking-wider">{STAT_LABELS[key]}</span>
+                            {isUnrolled ? (
+                                <>
+                                    <span className="text-2xl font-bold text-zinc-600 leading-tight">—</span>
+                                    <span className="text-[9px] text-zinc-600 mt-0.5">Tap</span>
+                                </>
+                            ) : (
+                                <>
+                                    <span className="text-2xl font-bold text-white leading-tight">{value}</span>
+                                    <span className={`text-xs mt-0.5 ${isRolling ? 'text-zinc-500' : 'text-red-500'}`}>
+                                        {calcMod(value)}
+                                    </span>
+                                </>
+                            )}
+                        </button>
+                    );
+                })}
+            </div>
+            {stats.con !== null && rollingStatKey !== 'con' && (
+                <div className="mt-3 flex items-center justify-center gap-2 text-sm bg-zinc-800 rounded-lg py-2">
+                    <i className="fa-solid fa-heart text-red-500"></i>
+                    <span className="text-zinc-300">HP:</span>
+                    <span className="font-bold text-white">{stats.con * 2 + 10}</span>
+                </div>
+            )}
+        </div>
     );
 }
 
