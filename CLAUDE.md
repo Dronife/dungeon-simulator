@@ -75,8 +75,8 @@ PLAYING: Player input → pre-rolled dice → LLM Manager decides stakes → NPC
 ### Layout
 Uses the mobile game category-based single-screen pattern with 3 zones:
 1. **Character Preview** (flex-1) — 6-layer composited character (back hair → base → facial → outfit → hair shadow → front hair), all with CSS filters for hair color
-2. **Icon Strip** (shrink-0) — 5 category buttons: Hair (`fa-scissors`), Outfit (`fa-shirt`), Color (`fa-palette`), Bio (`fa-id-card`), Sheet (`fa-scroll`). Active = `text-red-500`, inactive = `text-zinc-500`
-3. **Options Panel** (shrink-0, max-h-[40vh], scrollable inside) — renders the active category's panel + Finished button
+2. **Icon Strip** (shrink-0) — 5 category buttons in order: Bio (`fa-id-card`), Sheet (`fa-scroll`), Hair (`fa-scissors`), Outfit (`fa-shirt`), Color (`fa-palette`). Active = `text-red-500`, inactive = `text-zinc-500`. Default tab is Bio.
+3. **Options Panel** (shrink-0, max-h-[45vh], flex column) — scrollable content area on top, Finished button pinned at bottom outside the scroll area (always visible on every tab)
 
 ### Category Panels
 - **HairPanel** — 2x2 grid of hair combo thumbnails (front × back variants)
