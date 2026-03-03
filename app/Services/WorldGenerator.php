@@ -15,6 +15,43 @@ class WorldGenerator
         $this->client = new GeminiClient();
     }
 
+    public function generateWorld(): array
+    {
+        ini_set('max_execution_time', 300);
+
+        $prompt = strtr("
+            {general_prompt_rules}\n
+            {world_prompt_rules}\n
+            structure:\n
+            {\n
+                {world_json_structure}\n
+            }",
+            [
+                '{general_prompt_rules}' => $this->getGeneralPromptRules(),
+                '{world_prompt_rules}' => $this->getWorldPromptRules(),
+                '{world_json_structure}' => $this->getWorldJsonStructure()
+            ]
+        );
+
+        $response = $this->client->generate(
+            prompt: $prompt,
+            systemPrompt: 'You are a fantasy world generator. Return ONLY valid JSON, no markdown, no explanation.',
+            temperature: 1.0,
+        );
+
+        $json = json_decode($response->text, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new \RuntimeException('Failed to parse LLM response as JSON: ' . $response->text);
+        }
+
+        return [
+            'world' => $json['world'] ?? [],
+            'world_lore' => $json['world_lore'] ?? [],
+            'world_explanation' => $json['world_explanation'] ?? [],
+        ];
+    }
+
     public function generate(): array
     {
         ini_set('max_execution_time', 300);
@@ -118,10 +155,10 @@ class WorldGenerator
     }
 
 
-    public function getPredefinedLoreStats(): string
+    public function getPredefinedLoreStats(int $amount = 1): string
     {
         $lore = [];
-        for ($i = 0; $i < 10; $i++) {
+        for ($i = 0; $i < $amount; $i++) {
             $lore[] = [
                 'description' => random_int(1, 100),
                 'known_how' => random_int(1, 100),
@@ -277,7 +314,7 @@ class WorldGenerator
             lore_temperature is between 0 and 1. It indicates how much lore to add. Preference is to not add stuff around. But if lore temperature allows it, you can add.
 
             the "predefined_world_lore_values_if_any" is helper for llm because llm can not think always and it helps to write lore IF THERE IS ANY.
-            It is not clear how many lore items LLM will write so there will be 10 items in order saying if
+            It is not clear how many lore items LLM will write so there will be MAX 3 items in order saying if. There will be provided how many lore items to generate.
             description has much information, if known_how is possible, if there is reason, occurrence.(All values between 0 and 100).
             The lower the value for attribute the less text and the more direct text becomes.
 
@@ -360,6 +397,7 @@ class WorldGenerator
                 "universe_rules": "how magic works, gods, special physics or rules",
                 "environment_description": "the starting location, atmosphere, key features"
             },
+            "lore_temperature": {lore_temperature},
             "world_explanation": {
                 "world_era" : "what is this era?",
                 "magic": "if any",
@@ -388,7 +426,8 @@ class WorldGenerator
             $json,
             [
                 '{predefined_world}' => $this->worldExplanationPredefined(),
-                '{predefined_world_lore_values_if_any}' => $this->getPredefinedLoreStats(),
+                '{lore_temperature}' => random_int(0, 100) / 10,
+                '{predefined_world_lore_values_if_any}' => $this->getPredefinedLoreStats(random_int(0,3)),
             ]
         );
     }

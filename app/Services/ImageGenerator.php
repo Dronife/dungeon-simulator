@@ -59,14 +59,13 @@ class ImageGenerator
         }
 
         $loreItemsImploded = implode("\n", $loreItem);
-
         $imagePrompt = <<<PROMPT
-
-        Generate concept painting/key art in a style of Digital Painting. for each individual boxes of reference image. Time is: {$timeDescription}
+        YOUR TASK: Generate concept painting/key art in a style of Digital Painting. for each individual boxes of reference image. Time is: {$timeDescription}
 
         {$loreItemsImploded}
 
         Numbers from reference picture must not be written.
+
         PROMPT;
 
 
@@ -76,7 +75,7 @@ class ImageGenerator
             throw new \RuntimeException("Template not found: {$templatePath}");
         }
 
-        $imageData = $this->client->generateImage($imagePrompt, '1:1', $templatePath, GeminiClient::MODEL_IMAGE_PRO, 1.0);;
+        $imageData = $this->client->generateImage($imagePrompt, '1:1', $templatePath, GeminiClient::MODEL_IMAGE, 1.0);
 
         if (!$imageData) {
             return null;

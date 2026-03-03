@@ -91,11 +91,11 @@ class GeminiClient
         $generationConfig = new GenerationConfig(
             maxOutputTokens: 32768,
             temperature: $temperature,
-            topP: 0.95,
-            topK: 64,
+//            topP: 0.95,
+//            topK: 64,
             responseModalities: [ResponseModality::TEXT, ResponseModality::IMAGE],
-            enableEnhancedCivicAnswers: true,
-            thinkingConfig: ThinkingConfig::from(['includeThoughts' => true]),
+//            enableEnhancedCivicAnswers: true,
+//            thinkingConfig: ThinkingConfig::from(['includeThoughts' => true]),
             imageConfig: $imageConfig,
         );
 
