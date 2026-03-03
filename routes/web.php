@@ -16,6 +16,8 @@ Route::get('/', fn() => redirect()->route('game.index'));
 Route::get('/game', [GameController::class, 'index'])->name('game.index');
 Route::post('/game', [GameController::class, 'store'])->name('game.store');
 Route::get('/game/generate', [GameController::class, 'generate'])->name('game.generate');
+Route::get('/game/world-generate', [GameController::class, 'generateWorld'])->name('game.world-generate');
+Route::get('/game/world-images/{cacheKey}', [GameController::class, 'worldImages'])->name('game.world-images');
 Route::get('/game/character-builder', fn() => Inertia::render('Games/CharacterBuilder'))->name('game.character-builder');
 Route::post('/api/character/generate-trait', [GameController::class, 'generateTrait'])->name('character.generate-trait');
 Route::get('/game/{game}', [GameController::class, 'show'])->name('game.show');

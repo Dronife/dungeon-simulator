@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from '@inertiajs/react';
 import Layout from '@/Layouts/Layout';
 
@@ -13,23 +13,34 @@ export default function Index({ games }) {
     const [characterAppearance, setCharacterAppearance] = useState(null);
     const [characterTraits, setCharacterTraits] = useState(null);
     const [characterStats, setCharacterStats] = useState(null);
+    const pollIntervalRef = useRef(null);
 
     // Load from localStorage on mount
     useEffect(() => {
         const cached = localStorage.getItem('dnd_generated');
         if (cached) {
             try {
-                setGenerated(JSON.parse(cached));
+                const parsed = JSON.parse(cached);
+                setGenerated(parsed);
+                // Resume polling if images were still pending
+                if (parsed.imagesCacheKey && !parsed.world_lore_image_path) {
+                    pollWorldImages(parsed.imagesCacheKey);
+                }
             } catch (e) {
                 localStorage.removeItem('dnd_generated');
             }
+        }
+
+        // Restore customizeMode if it was a custom character session
+        const isCustom = localStorage.getItem('dnd_custom_character');
+        if (isCustom) {
+            setCustomizeMode('custom');
         }
 
         const appearance = localStorage.getItem('dnd_character_appearance');
         if (appearance) {
             try {
                 setCharacterAppearance(JSON.parse(appearance));
-                setCustomizeMode('custom');
             } catch (e) {
                 localStorage.removeItem('dnd_character_appearance');
             }
@@ -61,6 +72,54 @@ export default function Index({ games }) {
         }
     }, [generated]);
 
+    const stopPolling = useCallback(() => {
+        if (pollIntervalRef.current) {
+            clearInterval(pollIntervalRef.current);
+            pollIntervalRef.current = null;
+        }
+    }, []);
+
+    const pollWorldImages = useCallback((cacheKey) => {
+        stopPolling();
+        pollIntervalRef.current = setInterval(async () => {
+            try {
+                const res = await fetch(`/game/world-images/${cacheKey}`);
+                const data = await res.json();
+                if (data.status === 'done') {
+                    stopPolling();
+                    setGenerated(prev => prev ? { ...prev, world_lore_image_path: data.world_lore_image_path } : prev);
+                } else if (data.status === 'failed') {
+                    stopPolling();
+                }
+            } catch {
+                stopPolling();
+            }
+        }, 2000);
+    }, [stopPolling]);
+
+    // Clean up polling on unmount
+    useEffect(() => stopPolling, [stopPolling]);
+
+    const fetchWorldGeneration = useCallback(async () => {
+        stopPolling();
+        setGenerating(true);
+        setGenerated(null);
+        setError(null);
+        try {
+            const res = await fetch('/game/world-generate');
+            if (!res.ok) throw new Error('Failed to generate world');
+            const data = await res.json();
+            setGenerated(data);
+            setGenerating(false);
+            if (data.imagesCacheKey) {
+                pollWorldImages(data.imagesCacheKey);
+            }
+        } catch (err) {
+            setError(err.message);
+            setGenerating(false);
+        }
+    }, [pollWorldImages]);
+
     const handleGenerate = () => {
         setShowChoiceModal(true);
     };
@@ -68,12 +127,14 @@ export default function Index({ games }) {
     const handleChoiceAI = () => {
         setShowChoiceModal(false);
         setCustomizeMode('ai');
+        fetchWorldGeneration();
     };
 
     const handleChoiceCustom = () => {
         setShowChoiceModal(false);
         setCustomizeMode('custom');
         localStorage.setItem('dnd_custom_character', 'true');
+        fetchWorldGeneration();
     };
 
     const handleStartGame = async () => {
@@ -112,7 +173,9 @@ export default function Index({ games }) {
     };
 
     const handleDiscard = () => {
+        stopPolling();
         setGenerated(null);
+        setGenerating(false);
         setCustomizeMode(null);
         setCharacterAppearance(null);
         setCharacterTraits(null);
@@ -128,7 +191,7 @@ export default function Index({ games }) {
         <Layout>
             <div className="px-4 py-6 h-[calc(100vh-60px)] flex flex-col overflow-hidden">
                 {/* Generate Button */}
-                {!generated && !generating && !customizeMode && (
+                {!generated && !generating && (
                     <>
                         <button
                             onClick={handleGenerate}
@@ -173,8 +236,8 @@ export default function Index({ games }) {
                     </>
                 )}
 
-                {/* Loading State */}
-                {generating && (
+                {/* Loading State — only for non-customize mode (old AI-only path) */}
+                {generating && !customizeMode && (
                     <div className="flex-1 flex items-center justify-center">
                         <div className="text-center">
                             <i className="fa-solid fa-dice-d20 fa-spin text-5xl text-red-500 mb-4"></i>
@@ -194,35 +257,64 @@ export default function Index({ games }) {
                 {generated && !generating && (
                     <div className="flex-1 flex flex-col items-center gap-3 min-h-0 overflow-hidden">
                         {/* Character Card - Top Half */}
-                        <button
-                            onClick={() => setCharacterDrawerOpen(true)}
-                            className="flex-1 min-h-0 aspect-square max-w-full bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-left hover:border-red-500/50 transition relative overflow-hidden"
-                        >
-                            {/* Background image - ZXC cell */}
-                            {generated.character?.image_path && (
-                                <>
-                                    <MatrixCell
-                                        imagePath={generated.character.image_path}
-                                        cell="zxc"
-                                        className="absolute inset-0 "
-                                    />
-                                    {/* Gradient overlay */}
-                                    <div className="absolute inset-0 bg-gradient-to-r from-[#3d0d09]/100  to-black/40"></div>
-                                </>
-                            )}
-                            <div className="relative">
-                                <div className="flex items-center gap-2 text-zinc-300 text-xs uppercase tracking-wide mb-2">
-                                    <i className="fa-solid fa-user"></i>
-                                    <span>Character</span>
+                        {customizeMode === 'custom' ? (
+                            characterAppearance ? (
+                                <a
+                                    href="/game/character-builder"
+                                    className="flex-1 min-h-0 aspect-square max-w-full bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-left relative overflow-hidden hover:border-red-500/50 transition block"
+                                >
+                                    <ConceptArtPreview appearance={characterAppearance} className="absolute inset-0" />
+                                    <div className="absolute inset-0 bg-gradient-to-r from-[#3d0d09]/50  to-black/90"></div>
+                                    <div className="relative">
+                                        <div className="flex items-center gap-2 text-zinc-300 text-xs uppercase tracking-wide mb-2">
+                                            <i className="fa-solid fa-user"></i>
+                                            <span>Character</span>
+                                        </div>
+                                        <p className="text-red-500 font-semibold">Custom Character</p>
+                                        <p className="text-zinc-500 text-xs mt-1">Tap to edit</p>
+                                    </div>
+                                </a>
+                            ) : (
+                                <a
+                                    href="/game/character-builder"
+                                    className="flex-1 min-h-0 aspect-square max-w-full bg-zinc-900 border border-zinc-800 border-dashed rounded-xl p-4 flex flex-col items-center justify-center hover:border-red-500/50 transition"
+                                >
+                                    <i className="fa-solid fa-user-pen text-4xl text-zinc-600 mb-3"></i>
+                                    <p className="text-zinc-400 font-semibold">Customize Character</p>
+                                    <p className="text-zinc-600 text-sm mt-1">Tap to open builder</p>
+                                </a>
+                            )
+                        ) : (
+                            <button
+                                onClick={() => setCharacterDrawerOpen(true)}
+                                className="flex-1 min-h-0 aspect-square max-w-full bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-left hover:border-red-500/50 transition relative overflow-hidden"
+                            >
+                                {/* Background image - ZXC cell */}
+                                {generated.character?.image_path && (
+                                    <>
+                                        <MatrixCell
+                                            imagePath={generated.character.image_path}
+                                            cell="zxc"
+                                            className="absolute inset-0 "
+                                        />
+                                        {/* Gradient overlay */}
+                                        <div className="absolute inset-0 bg-gradient-to-r from-[#3d0d09]/100  to-black/40"></div>
+                                    </>
+                                )}
+                                <div className="relative">
+                                    <div className="flex items-center gap-2 text-zinc-300 text-xs uppercase tracking-wide mb-2">
+                                        <i className="fa-solid fa-user"></i>
+                                        <span>Character</span>
+                                    </div>
+                                    <h2 className="text-2xl font-bold text-red-500 mb-1">{generated.character?.name}</h2>
+                                    <p className="text-zinc-300 text-sm mb-3">{generated.character?.job || 'Adventurer'}</p>
+                                    <p className="text-zinc-400 text-sm line-clamp-2">{generated.character?.info}</p>
+                                    <div className="absolute bottom-0 right-0 text-zinc-700">
+                                        <i className="fa-solid fa-chevron-right"></i>
+                                    </div>
                                 </div>
-                                <h2 className="text-2xl font-bold text-red-500 mb-1">{generated.character?.name}</h2>
-                                <p className="text-zinc-300 text-sm mb-3">{generated.character?.job || 'Adventurer'}</p>
-                                <p className="text-zinc-400 text-sm line-clamp-2">{generated.character?.info}</p>
-                                <div className="absolute bottom-0 right-0 text-zinc-700">
-                                    <i className="fa-solid fa-chevron-right"></i>
-                                </div>
-                            </div>
-                        </button>
+                            </button>
+                        )}
 
                         {/* World Card - Bottom Half */}
                         <button
@@ -289,8 +381,8 @@ export default function Index({ games }) {
                     </div>
                 )}
 
-                {/* Customize Mode - Two Cards with loading/custom states */}
-                {customizeMode && !generated && (
+                {/* Customize Mode - Loading state while world is generating */}
+                {customizeMode && !generated && generating && (
                     <div className="flex-1 flex flex-col items-center gap-3 min-h-0 overflow-hidden">
                         {/* Character Card */}
                         {customizeMode === 'ai' ? (

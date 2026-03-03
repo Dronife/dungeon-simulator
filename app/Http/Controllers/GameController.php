@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\GenerateWorldImages;
 use App\Models\Game;
 use App\Models\Image;
 use App\Clients\GeminiClient;
 use App\Services\ImageGenerator;
 use App\Services\WorldGenerator;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 class GameController extends Controller
@@ -24,6 +27,30 @@ class GameController extends Controller
     {
         $game->load(['characters', 'world', 'dmMemories.memory']);
         return view('game.show', compact('game'));
+    }
+
+    public function generateWorld()
+    {
+        $generator = new WorldGenerator();
+        $data = $generator->generateWorld();
+
+        $cacheKey = 'world_images_' . Str::random(16);
+        Cache::put($cacheKey, ['status' => 'pending'], now()->addHours(1));
+
+        //TODO: something is wrong with the generator need to fix it
+        GenerateWorldImages::dispatch($cacheKey, $data);
+
+        return response()->json([
+            'world' => $data['world'],
+            'world_lore' => $data['world_lore'],
+            'world_explanation' => $data['world_explanation'],
+            'imagesCacheKey' => $cacheKey,
+        ]);
+    }
+
+    public function worldImages(string $cacheKey)
+    {
+        return response()->json(Cache::get($cacheKey, ['status' => 'pending']));
     }
 
     public function generate(ImageGenerator $imageGenerator)
