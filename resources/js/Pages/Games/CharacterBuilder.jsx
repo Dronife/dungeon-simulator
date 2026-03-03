@@ -185,8 +185,9 @@ export default function CharacterBuilder() {
                 </div>
 
                 {/* Options Panel */}
-                <div className="shrink-0 bg-zinc-900 border-t border-zinc-800 rounded-t-2xl overflow-hidden">
-                    <div className="p-4 space-y-4 max-h-[40vh] overflow-y-auto">
+                <div className="shrink-0 bg-zinc-900 border-t border-zinc-800 rounded-t-2xl overflow-hidden flex flex-col max-h-[45vh]">
+                    {/* Scrollable content */}
+                    <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
                         {activeCategory === 'hair' && (
                             <HairPanel
                                 hairFront={hairFront} hairBack={hairBack}
@@ -216,8 +217,10 @@ export default function CharacterBuilder() {
                                 generatingField={generatingField}
                             />
                         )}
+                    </div>
 
-                        {/* Finish Button */}
+                    {/* Finish Button — pinned at bottom */}
+                    <div className="shrink-0 px-4 pb-4 pt-2 border-t border-zinc-800">
                         <button
                             onClick={handleFinish}
                             className="w-full py-3 bg-red-600 hover:bg-red-700 rounded-xl font-semibold transition"
