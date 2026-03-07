@@ -61,7 +61,7 @@ class ImageGenerator
         $loreItemsImploded = implode("\n", $loreItem);
         $imagePrompt = <<<PROMPT
         YOUR TASK: Generate concept painting/key art in a style of Digital Painting. for each individual boxes of reference image. Time is: {$timeDescription}
-
+        RULE: YOU DO NO CREATE SEPERATE IMAGES. YOU ARE MUST FILL THE REFERENCE.
         {$loreItemsImploded}
 
         Numbers from reference picture must not be written.

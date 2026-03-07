@@ -9,10 +9,12 @@ class WorldGenerator
     private GeminiClient $client;
     private float $globalTemperature;
     private array $character = [];
+    private SeedGenerator $seeds;
 
     public function __construct()
     {
         $this->client = new GeminiClient();
+        $this->seeds = new SeedGenerator();
     }
 
     public function generateWorld(): array
@@ -29,7 +31,7 @@ class WorldGenerator
             [
                 '{general_prompt_rules}' => $this->getGeneralPromptRules(),
                 '{world_prompt_rules}' => $this->getWorldPromptRules(),
-                '{world_json_structure}' => $this->getWorldJsonStructure()
+                '{world_json_structure}' => $this->getStandaloneWorldJsonStructure()
             ]
         );
 
@@ -72,7 +74,7 @@ class WorldGenerator
             throw new \RuntimeException('Failed to parse LLM response as JSON: ' . $response->text);
         }
 
-        foreach ($this->generateStats() as $key => $stat) {
+        foreach ($this->seeds->generateStats() as $key => $stat) {
             $json['character'][$key] = $stat;
         }
 
@@ -107,173 +109,6 @@ class WorldGenerator
         );
 
         return $prompt;
-    }
-
-    /**
-     * @return array<string, int>
-     */
-    private function generateStats(): array
-    {
-        $con = random_int(5, 19);
-        $hp = $con * 2 + 10;
-        return [
-            'str' => random_int(5, 19),
-            'dex' => random_int(5, 19),
-            'con' => $con,
-            'int' => random_int(5, 19),
-            'wis' => random_int(5, 19),
-            'cha' => random_int(5, 19),
-            'hp' => $hp,
-            'max_hp' => $hp,
-            'trauma_severity' => random_int(1, 6),
-            'goal_severity' => random_int(1, 6),
-            'intention_severity' => random_int(1, 10),
-            'personality_severity' => random_int(1, 10),
-        ];
-    }
-
-    private function getAttributeCount(): int
-    {
-        if ($this->globalTemperature >= 0 && $this->globalTemperature <= 0.2) {
-            return random_int(1, 3);
-        }
-
-        if ($this->globalTemperature >= 0.21 && $this->globalTemperature <= .45) {
-            return random_int(3, 6);
-        }
-
-        return random_int(7, 11);
-    }
-
-    public function getAttributeNames(int $amount): string
-    {
-        $attributes = ['personality', 'traits', 'trauma', 'hobbies', 'routines', 'job', 'skills', 'goals', 'secrets', 'limits', 'intentions'];
-
-        shuffle($attributes);
-
-        return implode(', ', array_slice($attributes, 0, $amount));
-    }
-
-
-    public function getPredefinedLoreStats(int $amount = 1): string
-    {
-        $lore = [];
-        for ($i = 0; $i < $amount; $i++) {
-            $lore[] = [
-                'description' => random_int(1, 100),
-                'known_how' => random_int(1, 100),
-                'reason' => random_int(1, 100),
-                'occurrence' => random_int(1, 100),
-                'grounding' => random_int(1, 100),
-                'chaos' => random_int(1, 100),
-            ];
-        }
-
-        return json_encode($lore);
-    }
-
-    private function worldExplanationPredefined(): string
-    {
-        $world = [
-            'magic' => random_int(1, 100),
-            'gods' => random_int(1, 100),
-            'physics' => random_int(1, 100),
-            'specific_rules' => random_int(1, 100),
-            'current_location' => random_int(1, 100),
-        ];
-
-        return json_encode($world);
-    }
-
-    private function getPredefinedCharacter(): string
-    {
-        // Return existing character if set
-        if (!empty($this->character)) {
-            return json_encode($this->character);
-        }
-
-        $races = [
-            'Human', 'Elf', 'Dwarf', 'Halfling', 'Dragonborn', 'Gnome',
-            'Half-Elf', 'Half-Orc', 'Tiefling', 'Aarakocra', 'Genasi',
-            'Gith', 'Tabaxi', 'Warforged'
-        ];
-
-        // 1. Generate Base Stats
-        $race = $races[array_rand($races)];
-        $muscle = random_int(1, 10);
-        $fat = random_int(1, 10);
-        $beauty = random_int(1, 10);
-
-        // 2. Derive Body Type Logic (The correlation matrix)
-        $bodyType = $this->calculateBodyType($muscle, $fat);
-
-        // 3. Derive Facial Logic
-        $face = $this->calculateFace($beauty);
-
-        // 4. Race Specific Logic (Nuance)
-        $distinctiveFeature = $this->getRaceFeature($race);
-
-        $characterData = [
-            'race' => $race,
-            'muscle_index' => $muscle,
-            'fat_index' => $fat,
-            'beauty_index' => $beauty,
-            'body_type' => $bodyType,
-            'facial_structure' => $face,
-            'distinctive_trait' => $distinctiveFeature,
-            'overall_summary' => "A {$bodyType} {$race} with {$face} features and {$distinctiveFeature}."
-        ];
-
-        return json_encode($characterData);
-    }
-
-    private function calculateBodyType(int $muscle, int $fat): string
-    {
-        // Low Muscle Logic
-        if ($muscle <= 3) {
-            if ($fat <= 3) return 'Gaunt / Skeletal';
-            if ($fat <= 6) return 'Scrawny / Soft';
-            return 'Doughy / Obese';
-        }
-
-        // Average Muscle Logic
-        if ($muscle <= 7) {
-            if ($fat <= 3) return 'Lean / Wiry';
-            if ($fat <= 6) return 'Average / Proportionate';
-            return 'Chubby / Stout';
-        }
-
-        // High Muscle Logic
-        if ($fat <= 3) return 'Ripped / Vascular';
-        if ($fat <= 6) return 'Athletic / Muscular';
-        return 'Burly / Powerlifter Build';
-    }
-
-    private function calculateFace(int $beauty): string
-    {
-        if ($beauty <= 3) {
-            $flaws = ['asymmetrical features', 'pockmarked skin', 'a broken nose', 'deep scarring'];
-            return 'Unattractive, defined by ' . $flaws[array_rand($flaws)];
-        }
-
-        if ($beauty <= 7) {
-            return 'Plain / Common looking';
-        }
-
-        $features = ['striking symmetry', 'piercing eyes', 'chiseled jawline', 'ethereal elegance'];
-        return 'Stunning, defined by ' . $features[array_rand($features)];
-    }
-
-    private function getRaceFeature(string $race): string
-    {
-        return match ($race) {
-            'Dragonborn' => 'scales of ' . ['bronze', 'green', 'red', 'silver', 'gold'][rand(0, 4)],
-            'Tiefling' => 'horns that are ' . ['curled like a ram', 'straight and pointed', 'broken'][rand(0, 2)],
-            'Warforged' => 'plating made of ' . ['polished steel', 'rusted iron', 'darkwood', 'stone'][rand(0, 3)],
-            'Tabaxi' => 'fur with a ' . ['calico', 'leopard spot', 'solid black', 'striped'][rand(0, 3)] . ' pattern',
-            'Aarakocra' => 'plumage resembling a ' . ['eagle', 'parrot', 'owl', 'crow'][rand(0, 3)],
-            default => 'distinctive ' . ['tattoos', 'scars', 'piercings', 'eye color'][rand(0, 3)],
-        };
     }
 
     private function getGeneralPromptRules(): string
@@ -370,23 +205,23 @@ class WorldGenerator
             },
         PROMP;
 
-        $attributeCount = $this->getAttributeCount();
+        $attributeCount = $this->seeds->getAttributeCount($this->globalTemperature);
         return strtr(
             $json,
             [
-                '{predefined_character}' => $this->getPredefinedCharacter(),
+                '{predefined_character}' => $this->seeds->getPredefinedCharacter($this->character),
                 '{chaotic_temperature}' => random_int(-100, 100) / 100,
                 '{positive_temperature}' => random_int(-100, 100) / 100,
                 '{lore_temperature}' => abs(random_int(-100, 100) / 100) / 2,
                 '{temperature}' => $this->globalTemperature,
                 '{how_many_attributes_to_fill}' => $attributeCount,
-                '{attributes_to_fill}' => $this->getAttributeNames($attributeCount)
+                '{attributes_to_fill}' => $this->seeds->getAttributeNames($attributeCount)
 
             ]
         );
     }
 
-    public function getWorldJsonStructure()
+    public function getStandaloneWorldJsonStructure()
     {
         $json = <<<PROMP
            "predefined_world": {
@@ -397,7 +232,6 @@ class WorldGenerator
                 "universe_rules": "how magic works, gods, special physics or rules",
                 "environment_description": "the starting location, atmosphere, key features"
             },
-            "lore_temperature": {lore_temperature},
             "world_explanation": {
                 "world_era" : "what is this era?",
                 "magic": "if any",
@@ -425,9 +259,52 @@ class WorldGenerator
         return strtr(
             $json,
             [
-                '{predefined_world}' => $this->worldExplanationPredefined(),
-                '{lore_temperature}' => random_int(0, 100) / 10,
-                '{predefined_world_lore_values_if_any}' => $this->getPredefinedLoreStats(random_int(0,3)),
+                '{predefined_world}' => $this->seeds->worldExplanationPredefined(),
+                '{predefined_world_lore_values_if_any}' => $this->seeds->getPredefinedLoreStats(random_int(0,3)),
+            ]
+        );
+    }
+
+    public function getWorldJsonStructure()
+    {
+        $json = <<<PROMP
+           "predefined_world": {
+                {predefined_world}
+            },
+            "world": {
+                "time": "era, season, time of day",
+                "universe_rules": "how magic works, gods, special physics or rules",
+                "environment_description": "the starting location, atmosphere, key features"
+            },
+            "world_explanation": {
+                "world_era" : "what is this era?",
+                "magic": "if any",
+                "gods": "if any",
+                "physics": "if any",
+                "specific_rules": "if any",
+                "current_location": "place"
+            },
+            "predefined_world_lore_values_if_any": [
+                {predefined_world_lore_values_if_any}
+            ],
+            "world_lore": [
+                {
+                    "name": "name of thing you write",
+                    "type": "event|place|creature|organization|artifact|phenomenon",
+                    "description": "what it is, 1-2 sentences",
+                    "know_how": "where to find or how to make or how to acquire if possible"
+                    "reason" : "what causes or why it exists",
+                    "occurrence" : "occasionally, sometimes, frequently, often, usually, regularly, consistently, constantly, invariably, and forever",
+                    "image_prompt" : "straight to te point, abstract, epic, concept art of a thing you write"
+                }
+            ]
+        PROMP;
+
+        return strtr(
+            $json,
+            [
+                '{predefined_world}' => $this->seeds->worldExplanationPredefined(),
+                '{predefined_world_lore_values_if_any}' => $this->seeds->getPredefinedLoreStats(random_int(0,3)),
             ]
         );
     }
