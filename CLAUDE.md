@@ -1,11 +1,30 @@
 ## SoloRPG - Project Context
 
+# Claude Session Rules
+
+## After Implementation
+- When a feature is finished, **read the full CLAUDE.md** and update the business logic section accordingly — add new features, remove deleted ones, correct outdated descriptions
+- **Ask the user** if the implementation is finished before doing this
+- **Write a brief summary** of what the user was planning/brainstorming during the session (ideas mentioned but not implemented, "I'll do it later" items, future directions) so context isn't lost between sessions
+
+## Business Logic Documentation
+- Every new feature gets a brief business logic entry pointing to relevant code
+- If a feature is removed, delete its documentation — no stale entries
+- Keep it factual and current, not aspirational
+
 ### What It Is
 Solo RPG engine where game state (inventory, quests, NPC secrets) is tracked by code, not by the LLM. LLM only narrates; the engine enforces truth.
 
 ### Game Flow
-INIT: Generate world + characters + images → preview → start game → save to DB
+INIT: Generate world (+ optionally character) + images → preview → start game → save to DB
 PLAYING: Player input → pre-rolled dice → LLM Manager decides stakes → NPCs act → DM narrates via JSON → DB updated
+
+### World Generation
+- **Hook system** — `SeedGenerator` rolls random constraints that force the LLM into unique outputs. Types: threat/rumor/faction/local_color
+- **Seed/constraint logic** lives in `SeedGenerator.php`, prompt assembly in `WorldGenerator.php`
+
+### TODO / Future Plans
+- Implement async character creation (parallel generation)
 
 ### LLM Context Structure
 - **Character context:** personality, traits, goals, secrets, items, skills + tiered memory (Summary → Recap → Ticks)

@@ -29,9 +29,13 @@ class GenerateWorldImages implements ShouldQueue
     {
         Log::info("Starting world image generation for cache key {$this->cacheKey}");
         try {
+            $worldContext = array_merge($this->worldData['world_lore'], $this->worldData['world_hooks']);
+            Log::info('count of images: '.count($worldContext));
             $boxExplanation = [];
             for ($i = 0; $i < 3; $i++) {
-                $boxExplanation[] = 'box ' . ($i + 1) . ' - ' . ($this->worldData['world_lore'][$i]['image_prompt'] ?? 'Keep empty');
+
+                $data = $worldContext[$i] ?? null;
+                $boxExplanation[] = 'box ' . ($i + 1) . ' - ' . ($data['image_prompt'] ?? 'Keep empty');
             }
 
             $timeParts = explode(', ', $this->worldData['world']['time'] ?? '');
@@ -43,8 +47,11 @@ class GenerateWorldImages implements ShouldQueue
                 $this->worldData['world']['universe_rules'] ?? ''
             );
 
+            Log::info('boxExplanation: ' . json_encode($boxExplanation));
+            Log::info('timeDescription: ' . $timeDescription);
             $lorePath = $imageGenerator->generateLoreImage($boxExplanation, $timeDescription);
 
+            Log::info('lore path: ' . $lorePath);
             if ($lorePath) {
                 Cache::put($this->cacheKey, ['status' => 'done', 'world_lore_image_path' => $lorePath], now()->addHours(1));
                 Log::info("World image generation completed for {$this->cacheKey}");

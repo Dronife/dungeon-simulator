@@ -30,7 +30,7 @@ class WorldGenerator
             }",
             [
                 '{general_prompt_rules}' => $this->getGeneralPromptRules(),
-                '{world_prompt_rules}' => $this->getWorldPromptRules(),
+                '{world_prompt_rules}' => $this->getWorldStandalonePromptRules(),
                 '{world_json_structure}' => $this->getStandaloneWorldJsonStructure()
             ]
         );
@@ -50,6 +50,7 @@ class WorldGenerator
         return [
             'world' => $json['world'] ?? [],
             'world_lore' => $json['world_lore'] ?? [],
+            'world_hooks' => $json['world_hooks'] ?? [],
             'world_explanation' => $json['world_explanation'] ?? [],
         ];
     }
@@ -142,6 +143,36 @@ class WorldGenerator
         PROMP;
     }
 
+    private function getWorldStandalonePromptRules(): string
+    {
+        return <<<PROMP
+            "hook_seeds" contains random constraints for generating world_hooks. For each seed, generate one hook in "world_hooks".
+            You MUST use ALL seed constraints (subject, action, scale, tone, catalyst, sensory_detail, complication, timeframe).
+            Use the "type" from the seed as the hook type (threat, rumor, faction, local_color).
+            Keep each hook description to 2-3 sentences. Be specific, not generic. No cliche fantasy tropes.
+
+            world_explanation_predefined will have predefined values
+            "magic":
+                - 0-36 from none to minimal, there are instances where luck+dedication+will+genes makes you insane user. <= 1 percent of people able to use in extreme levels. Magic is really grounded. logical magical systems.
+                - 37-78 from minimal to moderate magic. It has system but is more loose, also grounded. Magic is more often in the world.
+                - 79-100 from moderate to always magic. It is grounded, but nothing special.
+            "gods":
+                - 0-36 - None to max 2. None can be anything else, super humans or something like that. Gods are more like fairy tales. But if higher score they exist, but it is really rare that gods appears
+                - 37-78  can be one or few. Gods are present. Time to time they appear. People know that they exist, but is rare occasion they appear.
+                - 79-100, They kinda like rare celebrities, they appear time to time. They like to interfere with human decisions
+            "physics":
+                - 0-50 - simple physics
+                - 51-100 - there can be from zero two few physic quirks that the real world does not have, but possible in sci-fi,
+            "specific_rules":
+                - 0-50 - nothing specific
+                - 51-100 - from nothing to one or few specific world/nation rules
+            "current_location":
+                - 0-36 - small village
+                - 37-78 - small town
+                - 79-100 - capital
+        PROMP;
+    }
+
     private function getWorldPromptRules(): string
     {
         return <<<PROMP
@@ -223,6 +254,9 @@ class WorldGenerator
 
     public function getStandaloneWorldJsonStructure()
     {
+        $hookCount = random_int(1, 3);
+        $hookSeeds = $this->seeds->generateHookSeeds($hookCount);
+
         $json = <<<PROMP
            "predefined_world": {
                 {predefined_world}
@@ -240,18 +274,16 @@ class WorldGenerator
                 "specific_rules": "if any",
                 "current_location": "place"
             },
-            "predefined_world_lore_values_if_any": [
-                {predefined_world_lore_values_if_any}
-            ],
-            "world_lore": [
+            "hook_seeds": {hook_seeds},
+            "world_hooks": [
                 {
-                    "name": "name of thing you write",
-                    "type": "event|place|creature|organization|artifact|phenomenon",
-                    "description": "what it is, 1-2 sentences",
-                    "know_how": "where to find or how to make or how to acquire if possible"
-                    "reason" : "what causes or why it exists",
-                    "occurrence" : "occasionally, sometimes, frequently, often, usually, regularly, consistently, constantly, invariably, and forever",
-                    "image_prompt" : "straight to te point, abstract, epic, concept art of a thing you write"
+                    "name": "short name for this hook, 2-4 words",
+                    "type": "threat|rumor|faction|local_color — use the type from the matching hook seed",
+                    "brief": "1 short sentence summary of what is happening",
+                    "situation": "what is happening right now, 1-2 sentences. You MUST use ALL seed constraints. No cliche fantasy tropes.",
+                    "stakes": "use the stakes seed as basis, expand briefly into 1 sentence fitting this hook",
+                    "clue": "use the clue seed as basis, expand briefly into 1 sentence fitting this hook",
+                    "image_prompt": "straight to the point, abstract, epic, concept art of this hook"
                 }
             ]
         PROMP;
@@ -260,7 +292,7 @@ class WorldGenerator
             $json,
             [
                 '{predefined_world}' => $this->seeds->worldExplanationPredefined(),
-                '{predefined_world_lore_values_if_any}' => $this->seeds->getPredefinedLoreStats(random_int(0,3)),
+                '{hook_seeds}' => json_encode($hookSeeds),
             ]
         );
     }
@@ -304,7 +336,7 @@ class WorldGenerator
             $json,
             [
                 '{predefined_world}' => $this->seeds->worldExplanationPredefined(),
-                '{predefined_world_lore_values_if_any}' => $this->seeds->getPredefinedLoreStats(random_int(0,3)),
+                '{predefined_world_lore_values_if_any}' => $this->seeds->getPredefinedLoreStats(random_int(0, 2)),
             ]
         );
     }

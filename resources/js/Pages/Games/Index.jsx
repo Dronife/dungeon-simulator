@@ -341,11 +341,16 @@ export default function Index({ games }) {
                                 </div>
                                 <h2 className="text-xl font-bold mb-1">{generated.world?.time?.split(',')[0] || 'Unknown Era'}</h2>
                                 <p className="text-zinc-400 text-sm line-clamp-2">{generated.world?.environment_description}</p>
-                                {generated.world_lore?.length > 0 && (
-                                    <div className="mt-3 flex gap-2">
-                                        {generated.world_lore.slice(0, 3).map((lore, i) => (
-                                            <span key={i} className="text-[10px] px-2 py-1 bg-zinc-800 text-zinc-400 rounded">
+                                {(generated.world_lore?.length > 0 || generated.world_hooks?.length > 0) && (
+                                    <div className="mt-3 flex gap-2 flex-wrap">
+                                        {(generated.world_lore || []).slice(0, 2).map((lore, i) => (
+                                            <span key={`lore-${i}`} className="text-[10px] px-2 py-1 bg-zinc-800 text-zinc-400 rounded">
                                                 {lore.name}
+                                            </span>
+                                        ))}
+                                        {(generated.world_hooks || []).slice(0, 2).map((hook, i) => (
+                                            <span key={`hook-${i}`} className="text-[10px] px-2 py-1 bg-red-900/60 text-red-400 rounded">
+                                                {hook.name}
                                             </span>
                                         ))}
                                     </div>
@@ -505,7 +510,8 @@ export default function Index({ games }) {
                         <WorldDrawerContent
                             world={generated.world}
                             lore={generated.world_lore}
-                            loreImagePath={generated.world_lore_image_path}
+                            hooks={generated.world_hooks}
+                            imagePath={generated.world_lore_image_path}
                         />
                     )}
                 </Drawer>
@@ -773,7 +779,9 @@ function CharacterDrawerContent({ character }) {
     );
 }
 
-function WorldDrawerContent({ world, lore, loreImagePath }) {
+function WorldDrawerContent({ world, lore, hooks, imagePath }) {
+    const loreCount = lore?.length || 0;
+
     return (
         <div className="space-y-4">
             {/* World Info */}
@@ -783,6 +791,20 @@ function WorldDrawerContent({ world, lore, loreImagePath }) {
                 {world?.environment_description && <Attr icon="fa-mountain-sun" label="Environment" value={world.environment_description} />}
             </div>
 
+            {/* Hooks */}
+            {hooks?.length > 0 && (
+                <div>
+                    <h3 className="text-zinc-300 text-xs uppercase tracking-wide mb-3">
+                        <i className="fa-solid fa-bolt mr-2"></i>Hooks ({hooks.length})
+                    </h3>
+                    <div className="space-y-3">
+                        {hooks.map((hook, i) => (
+                            <HookCard key={i} hook={hook} index={loreCount + i + 1} imagePath={imagePath} />
+                        ))}
+                    </div>
+                </div>
+            )}
+
             {/* Lore */}
             {lore?.length > 0 && (
                 <div>
@@ -790,8 +812,8 @@ function WorldDrawerContent({ world, lore, loreImagePath }) {
                         <i className="fa-solid fa-book-atlas mr-2"></i>Lore ({lore.length})
                     </h3>
                     <div className="space-y-3">
-                        {lore.slice(0, 4).map((item, i) => (
-                            <LoreCard key={i} item={item} index={i + 1} loreImagePath={loreImagePath} />
+                        {lore.map((item, i) => (
+                            <LoreCard key={i} item={item} index={i + 1} imagePath={imagePath} />
                         ))}
                     </div>
                 </div>
@@ -800,7 +822,101 @@ function WorldDrawerContent({ world, lore, loreImagePath }) {
     );
 }
 
-function LoreCard({ item, index, loreImagePath }) {
+function HookCard({ hook, index, imagePath }) {
+    const [opened, setOpened] = useState(false);
+    const [showFull, setShowFull] = useState(false);
+
+    const typeLabels = {
+        threat: 'Danger',
+        rumor: 'Rumor',
+        faction: 'Faction',
+        local_color: 'Flavor',
+    };
+
+    const typeIcons = {
+        threat: 'fa-skull-crossbones',
+        rumor: 'fa-ear-listen',
+        faction: 'fa-users',
+        local_color: 'fa-palette',
+    };
+
+    return (
+        <div className="bg-zinc-800 rounded-lg overflow-hidden">
+            {/* Compact row — tap to open */}
+            <div
+                className="flex items-center gap-3 p-2 cursor-pointer"
+                onClick={() => { setOpened(!opened); if (opened) setShowFull(false); }}
+            >
+                <div className="w-12 h-12 shrink-0 rounded-lg overflow-hidden bg-zinc-700">
+                    {imagePath ? (
+                        <Grid2x2Cell imagePath={imagePath} cell={index} className="w-full h-full" />
+                    ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                            <i className={`fa-solid ${typeIcons[hook.type] || 'fa-bolt'} text-zinc-600`}></i>
+                        </div>
+                    )}
+                </div>
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                        <h4 className="font-semibold text-sm truncate">{hook.name}</h4>
+                        <span className="text-[10px] px-1.5 py-0.5 bg-red-900/60 text-red-400 rounded shrink-0">
+                            {typeLabels[hook.type] || hook.type}
+                        </span>
+                    </div>
+                </div>
+                <i className={`fa-solid fa-chevron-down text-zinc-600 text-xs transition-transform duration-200 ${opened ? 'rotate-180' : ''}`}></i>
+            </div>
+
+            {/* Opened — brief + image + stakes + clue */}
+            {opened && (
+                <div className="px-3 pb-3 space-y-2">
+                    {imagePath && (
+                        <div className="aspect-video rounded-lg overflow-hidden bg-zinc-700">
+                            <Grid2x2Cell imagePath={imagePath} cell={index} className="w-full h-full" />
+                        </div>
+                    )}
+                    <p className="text-zinc-300 text-sm">{hook.brief}</p>
+                    <div className="pt-2 mb-5 border-b border-gray-600"></div>
+                    <div className="space-y-2 text-sm">
+                        {hook.stakes && (
+                            <div>
+                                <span className="text-zinc-500 text-xs uppercase tracking-wide">
+                                    <i className="fa-solid fa-scale-balanced mr-1"></i>Stakes
+                                </span>
+                                <p className="text-zinc-300 mt-0.5">{hook.stakes}</p>
+                            </div>
+                        )}
+                        {hook.clue && (
+                            <div>
+                                <span className="text-zinc-500 text-xs uppercase tracking-wide">
+                                    <i className="fa-solid fa-magnifying-glass mr-1"></i>Clue
+                                </span>
+                                <p className="text-zinc-300 mt-0.5">{hook.clue}</p>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Read more — full situation */}
+                    {hook.situation && !showFull && (
+                        <button
+                            onClick={(e) => { e.stopPropagation(); setShowFull(true); }}
+                            className="text-red-500 text-xs hover:text-red-400 transition"
+                        >
+                            Read more
+                        </button>
+                    )}
+                    {showFull && hook.situation && (
+                        <div className="pt-2 border-t border-zinc-700">
+                            <p className="text-zinc-400 text-sm">{hook.situation}</p>
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+}
+
+function LoreCard({ item, index, imagePath }) {
     const [expanded, setExpanded] = useState(false);
 
     return (
@@ -808,18 +924,15 @@ function LoreCard({ item, index, loreImagePath }) {
             className="bg-zinc-800 rounded-lg overflow-hidden cursor-pointer"
             onClick={() => setExpanded(!expanded)}
         >
-            {/* Image from 2x2 matrix - source is 1:1, each cell is also 1:1 */}
             <div className="aspect-square bg-zinc-700 flex items-center justify-center relative overflow-hidden">
-                {loreImagePath ? (
-                    <Grid2x2Cell imagePath={loreImagePath} cell={index} className="w-full h-full" />
+                {imagePath ? (
+                    <Grid2x2Cell imagePath={imagePath} cell={index} className="w-full h-full" />
                 ) : (
                     <i className="fa-solid fa-image text-3xl text-zinc-600"></i>
                 )}
-                {/* Type badge */}
                 <span className="absolute top-2 left-2 text-[10px] px-2 py-1 bg-red-900/80 text-red-400 rounded backdrop-blur-sm">
                     {item.type}
                 </span>
-                {/* Occurrence badge */}
                 {item.occurrence && (
                     <span className="absolute top-2 right-2 text-[10px] px-2 py-1 bg-zinc-900/80 text-zinc-400 rounded backdrop-blur-sm">
                         {item.occurrence}
@@ -827,20 +940,16 @@ function LoreCard({ item, index, loreImagePath }) {
                 )}
             </div>
 
-            {/* Content */}
             <div className="p-3">
-                {/* Header */}
                 <div className="flex items-center justify-between mb-2">
                     <h4 className="font-semibold">{item.name}</h4>
                     <i className={`fa-solid fa-chevron-down text-zinc-300 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}></i>
                 </div>
 
-                {/* Description - always visible */}
                 <p className={`text-zinc-400 text-sm ${expanded ? '' : 'line-clamp-2'}`}>
                     {item.description}
                 </p>
 
-                {/* Expanded content */}
                 {expanded && (
                     <div className="mt-3 pt-3 border-t border-zinc-700 space-y-2 text-sm">
                         {item.know_how && (

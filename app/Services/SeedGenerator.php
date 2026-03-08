@@ -120,6 +120,20 @@ class SeedGenerator
 
         $types = ['threat', 'rumor', 'faction', 'local_color'];
 
+        $clues = [
+            'common knowledge', 'whispered rumors', 'no one talks about it',
+            'only outsiders notice', 'speculations', 'one person claims to know',
+            'hard to miss', 'people avoid the topic', 'conflicting stories',
+            'noticed recently',
+        ];
+
+        $stakes = [
+            'trade route shuts down', 'people start leaving', 'food supply threatened',
+            'trust between neighbors breaks', 'someone powerful takes notice',
+            'the problem spreads', 'an innocent gets blamed', 'prices skyrocket',
+            'old grudges resurface', 'a ritual opportunity is lost',
+        ];
+
         return [
             'type' => $types[array_rand($types)],
             'subject' => $subjects[array_rand($subjects)],
@@ -130,6 +144,8 @@ class SeedGenerator
             'sensory_detail' => $sensoryDetails[array_rand($sensoryDetails)],
             'complication' => $complications[array_rand($complications)],
             'timeframe' => $timeframes[array_rand($timeframes)],
+            'clue' => $clues[array_rand($clues)],
+            'stakes' => $stakes[array_rand($stakes)],
         ];
     }
 
