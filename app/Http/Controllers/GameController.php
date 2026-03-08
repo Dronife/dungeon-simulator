@@ -37,12 +37,12 @@ class GameController extends Controller
         $cacheKey = 'world_images_' . Str::random(16);
         Cache::put($cacheKey, ['status' => 'pending'], now()->addHours(1));
 
-        //TODO: something is wrong with the generator need to fix it
         GenerateWorldImages::dispatch($cacheKey, $data);
 
         return response()->json([
             'world' => $data['world'],
             'world_lore' => $data['world_lore'],
+            'world_hooks' => $data['world_hooks'],
             'world_explanation' => $data['world_explanation'],
             'imagesCacheKey' => $cacheKey,
         ]);
