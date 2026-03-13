@@ -14,6 +14,8 @@ use Gemini\Laravel\Facades\Gemini;
 
 class GeminiClient
 {
+    public const MODEL_31_FLASH_LITE = 'gemini-3.1-flash-lite-preview';
+    public const MODEL_25_FLASH_LITE = 'gemini-2.5-flash-lite';
     public const MODEL_FLASH = 'gemini-3-flash-preview';
     public const MODEL_PRO = 'gemini-3-pro-preview';
     public const MODEL_IMAGE = 'gemini-2.5-flash-image';
@@ -28,7 +30,7 @@ class GeminiClient
         }
     }
 
-    public function generate(string $prompt, ?string $systemPrompt = null, float $temperature = 0.7): LlmResponse
+    public function generate(string $prompt, ?string $systemPrompt = null, float $temperature = 0.7, int $thinkingBudget = 0): LlmResponse
     {
         $generativeModel = Gemini::generativeModel(model: $this->model);
 
@@ -39,13 +41,15 @@ class GeminiClient
         }
 
         $generativeModel = $generativeModel->withGenerationConfig(
-            new GenerationConfig(temperature: $temperature)
+            new GenerationConfig(temperature: $temperature, thinkingConfig: new ThinkingConfig(includeThoughts: $thinkingBudget !== 0, thinkingBudget: $thinkingBudget))
         );
+
+
 
         $result = $generativeModel->generateContent($prompt);
 
         return new LlmResponse(
-            text: $result->text(),
+            text: $thinkingBudget !== 0 ? $result->parts()[1]?->text : $result->text(),
             promptTokens: $result->usageMetadata?->promptTokenCount,
             completionTokens: $result->usageMetadata?->candidatesTokenCount,
             finishReason: $result->candidates[0]?->finishReason?->value,
