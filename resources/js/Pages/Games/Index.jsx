@@ -142,12 +142,19 @@ export default function Index({ games }) {
 
         try {
             const payload = { ...generated };
-            if (characterTraits && payload.character) {
+            if (!payload.character) {
+                payload.character = {};
+            }
+            if (characterTraits) {
                 payload.character = { ...payload.character, ...characterTraits };
             }
-            if (characterStats && payload.character) {
+            if (characterStats) {
                 payload.character = { ...payload.character, ...characterStats };
             }
+            if (characterAppearance) {
+                payload.character = { ...payload.character, appearance: characterAppearance };
+            }
+            console.log(payload);
 
             const response = await fetch('/game', {
                 method: 'POST',

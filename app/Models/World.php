@@ -22,4 +22,14 @@ class World extends Model
     {
         return $this->belongsTo(Game::class);
     }
+
+    public function lore(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Lore::class);
+    }
+
+    public function hooks(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(WorldHook::class);
+    }
 }

@@ -16,12 +16,19 @@
 Solo RPG engine where game state (inventory, quests, NPC secrets) is tracked by code, not by the LLM. LLM only narrates; the engine enforces truth.
 
 ### Game Flow
-INIT: Generate world (+ optionally character) + images → preview → start game → save to DB
-PLAYING: Player input → pre-rolled dice → LLM Manager decides stakes → NPCs act → DM narrates via JSON → DB updated
+INIT: Generate world (+ optionally character) + images → preview → start game → save to DB → redirect to play screen
+PLAYING: Player types action → DM responds with structured screenplay-style scenes → saved to DB → rendered in play screen
 
 ### World Generation
 - **Hook system** — `SeedGenerator` rolls random constraints that force the LLM into unique outputs. Types: threat/rumor/faction/local_color
 - **Seed/constraint logic** lives in `SeedGenerator.php`, prompt assembly in `WorldGenerator.php`
+
+### Play Screen & Narration
+- Narration screen where the story happens. Player types, DM responds with structured scenes — not plain text.
+- Each DM response is a mix of scene headings, prose narration, NPC dialogue with stage directions, character actions with roll results, and inner thoughts. Rendered with distinct formatting per type so it reads like a movie script.
+- The DM is aware of the generated world, character sheet, and full conversation history.
+- History persists between sessions.
+- Crimson Pro for narrative text, JetBrains Mono for dice rolls and game mechanics.
 
 ### TODO / Future Plans
 - Implement async character creation (parallel generation)
@@ -121,5 +128,6 @@ Uses the mobile game category-based single-screen pattern with 3 zones:
 
 ### Integration with Index.jsx
 - The concept art character card in customize mode is an `<a href="/game/character-builder">` so users can tap to re-edit
-- On game start (`handleStartGame`), traits and stats from localStorage are merged into the character data sent to the backend
+- On game start, traits, stats, and appearance from localStorage are merged into character data. Works with or without AI-generated character.
+- Start Game redirects to the play screen
 - `handleDiscard` clears appearance, traits, and stats from localStorage

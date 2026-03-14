@@ -30,6 +30,11 @@ class Game extends Model
         return $this->hasOne(World::class);
     }
 
+    public function gameChats(): HasMany
+    {
+        return $this->hasMany(GameChat::class);
+    }
+
     public function dmMemories(): HasMany
     {
         return $this->hasMany(DmMemory::class);
