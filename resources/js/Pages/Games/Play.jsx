@@ -1,28 +1,69 @@
 import { useState, useEffect, useRef } from 'react';
 import Layout from '@/Layouts/Layout';
 
+// --- Avatar ---
+
+function Avatar({ characterId, show }) {
+    if (!characterId) return null;
+
+    // First letter of the last part of the ID (e.g. "magister_vane" → "V")
+    const parts = characterId.split('_');
+    const letter = (parts[parts.length - 1] || '?')[0].toUpperCase();
+
+    // Reserve space but hide when same character continues unbroken
+    if (!show) {
+        return <div className="w-7 shrink-0" />;
+    }
+
+    return (
+        <div className="w-7 h-7 shrink-0 rounded bg-zinc-800 border border-zinc-700 flex items-center justify-center">
+            <span className="text-zinc-400 text-xs font-semibold">{letter}</span>
+        </div>
+    );
+}
+
 // --- Line components ---
 
 function NarratorLine({ text }) {
     return <p className="text-zinc-300 leading-relaxed">{text}</p>;
 }
 
-function DialogueLine({ speaker, text }) {
+function DialogueLine({ speaker, direction, text, characterId, showAvatar }) {
     return (
-        <div>
-            {speaker && (
-                <p className="text-red-500/80 text-xs font-semibold uppercase tracking-wide mb-0.5">{speaker}</p>
-            )}
-            <p className="text-zinc-100 font-medium leading-relaxed">"{text}"</p>
+        <div className="flex gap-2.5">
+            <Avatar characterId={characterId} show={showAvatar} />
+            <div className="min-w-0">
+                {speaker && showAvatar && (
+                    <p className="text-red-500/80 text-xs font-semibold uppercase tracking-wide mb-0.5">{speaker}</p>
+                )}
+                {direction && (
+                    <p className="text-zinc-600 text-xs italic mb-0.5">{direction}</p>
+                )}
+                <p className="text-zinc-100 font-medium leading-relaxed">"{text}"</p>
+            </div>
         </div>
     );
 }
 
-function ActionLine({ speaker, text }) {
+function ActionLine({ speaker, text, characterId, showAvatar }) {
     return (
-        <div>
-            <p className="text-red-500/70 text-xs font-semibold uppercase tracking-wide mb-0.5">{speaker}</p>
-            <p className="text-zinc-400 italic leading-relaxed">{text}</p>
+        <div className="flex gap-2.5">
+            <Avatar characterId={characterId} show={showAvatar} />
+            <div className="min-w-0">
+                {showAvatar && (
+                    <p className="text-cyan-900 text-xs font-semibold uppercase tracking-wide mb-0.5">{speaker}</p>
+                )}
+                <p className="text-zinc-400 italic leading-relaxed">{text}</p>
+            </div>
+        </div>
+    );
+}
+
+function WhisperLine({ text, characterId, showAvatar }) {
+    return (
+        <div className="flex gap-2.5">
+            <Avatar characterId={characterId} show={showAvatar} />
+            <p className="text-violet-400/70 italic leading-relaxed">"{text}"</p>
         </div>
     );
 }
@@ -30,12 +71,14 @@ function ActionLine({ speaker, text }) {
 function MechanicLine({ text }) {
     const isSuccess = /success/i.test(text);
     const isFailure = /fail/i.test(text);
-    const colorClass = isSuccess ? 'text-emerald-500/60' : isFailure ? 'text-red-500/60' : 'text-zinc-600';
+    const colorClass = isSuccess ? 'text-emerald-500/60' : isFailure ? 'text-red-300/60' : 'text-zinc-600';
 
     return (
-        <p className={`${colorClass} font-mono text-xs tracking-wide uppercase`}>
-            &#x276C; {text} &#x276D;
-        </p>
+        <div className="flex justify-center py-5">
+            <p className={`${colorClass} font-mono text-xs tracking-wide uppercase`}>
+                &#x276C; {text} &#x276D;
+            </p>
+        </div>
     );
 }
 
@@ -74,6 +117,11 @@ function LlmMessage({ content }) {
         return <p className="text-zinc-300">{String(content)}</p>;
     }
 
+    // Track last character_id to determine avatar visibility
+    // Avatar shows on first appearance in an unbroken sequence of the same character_id
+    // A line without character_id (narrator, mechanic, heading) breaks the sequence
+    let lastCharacterId = null;
+
     return (
         <div className="max-w-prose">
             {lines.map((line, i) => {
@@ -90,9 +138,18 @@ function LlmMessage({ content }) {
                 else if (isMechanic || prev === 'mechanic') spacing = 'mt-2';
                 else if (typeChanged) spacing = 'mt-3';
 
+                // Avatar: show only when character_id changes or sequence is broken
+                let showAvatar = false;
+                if (line.character_id) {
+                    showAvatar = line.character_id !== lastCharacterId;
+                    lastCharacterId = line.character_id;
+                } else {
+                    lastCharacterId = null;
+                }
+
                 return (
                     <div key={i} className={spacing}>
-                        {renderLine(line)}
+                        {renderLine(line, showAvatar)}
                     </div>
                 );
             })}
@@ -100,14 +157,16 @@ function LlmMessage({ content }) {
     );
 }
 
-function renderLine(line) {
+function renderLine(line, showAvatar) {
     switch (line.type) {
         case 'narrator':
             return <NarratorLine text={line.text} />;
         case 'dialogue':
-            return <DialogueLine speaker={line.speaker} text={line.text} />;
+            return <DialogueLine speaker={line.speaker} direction={line.direction} text={line.text} characterId={line.character_id} showAvatar={showAvatar} />;
         case 'action':
-            return <ActionLine speaker={line.speaker} text={line.text} />;
+            return <ActionLine speaker={line.speaker} text={line.text} characterId={line.character_id} showAvatar={showAvatar} />;
+        case 'whisper':
+            return <WhisperLine text={line.text} characterId={line.character_id} showAvatar={showAvatar} />;
         case 'mechanic':
             return <MechanicLine text={line.text} />;
         case 'heading':
