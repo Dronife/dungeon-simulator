@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\GameController;
+use App\Http\Controllers\PlayController;
 use App\Http\Controllers\PlaygroundController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -20,6 +21,9 @@ Route::get('/game/world-generate', [GameController::class, 'generateWorld'])->na
 Route::get('/game/world-images/{cacheKey}', [GameController::class, 'worldImages'])->name('game.world-images');
 Route::get('/game/character-builder', fn() => Inertia::render('Games/CharacterBuilder'))->name('game.character-builder');
 Route::post('/api/character/generate-trait', [GameController::class, 'generateTrait'])->name('character.generate-trait');
+Route::get('/game/{game}/play', [PlayController::class, 'show'])->name('game.play');
+Route::post('/game/{game}/play', [PlayController::class, 'message'])->name('game.play.message');
+Route::post('/game/{game}/play/init', [PlayController::class, 'init'])->name('game.play.init');
 Route::get('/game/{game}', [GameController::class, 'show'])->name('game.show');
 Route::delete('/game/{game}', [GameController::class, 'destroy'])->name('game.destroy');
 

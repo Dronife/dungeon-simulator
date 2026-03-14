@@ -91,14 +91,14 @@ class GameController extends Controller
             $data = $request->validate([
                 'character' => 'required|array',
                 'world' => 'required|array',
+                'world_explanation' => 'required|array',
+                'world_hooks' => '|array',
+                'world_lore' => '|array',
+                'world_lore_image_path' => 'string',
             ]);
 
-            $game = Game::create([
-//                'name' => $data['character']['name'] ?? 'New Game',
-//                'status' => 'init',
-//                'current_tick' => 0,
-//                'global_rules' => $data['world']['universe_rules'] ?? null,
-            ]);
+
+            $game = Game::create();
 
             $world = $game->world()->create([
                 'time' => $data['world']['time'] ?? null,
@@ -108,20 +108,26 @@ class GameController extends Controller
 
             // Create lore entries
             foreach ($request->input('world_lore', []) as $loreItem) {
-                $lore = $world->lore()->create($loreItem);
+                $world->lore()->create($loreItem);
+            }
 
-                // Save lore image if exists
-                if (!empty($loreItem['image_path'])) {
-                    Image::create([
-                        'image_path' => $loreItem['image_path'],
-                        'model' => 'App\Models\Lore',
-                        'model_id' => $lore->id,
-                    ]);
-                }
+            // Create world hooks
+            foreach ($request->input('world_hooks', []) as $index => $hookItem) {
+                $world->hooks()->create([
+                    'name' => $hookItem['name'],
+                    'type' => $hookItem['type'],
+                    'brief' => $hookItem['brief'],
+                    'situation' => $hookItem['situation'] ?? null,
+                    'stakes' => $hookItem['stakes'] ?? null,
+                    'clue' => $hookItem['clue'] ?? null,
+                    'image_prompt' => $hookItem['image_prompt'] ?? null,
+                    'image_path' => $request->input('world_lore_image_path', []) ?? null,
+                    'image_cell_index' => $index,
+                ]);
             }
 
             $char = $data['character'];
-            $character = $game->characters()->create([
+            $game->characters()->create([
                 'is_player' => true,
                 'name' => $char['name'] ?? 'Unknown',
                 'info' => $char['info'] ?? null,
@@ -153,19 +159,10 @@ class GameController extends Controller
                 'positive_temperature' => $char['positive-temperature'] ?? $char['positive_temperature'] ?? 0,
             ]);
 
-            // Save character image if exists
-            if (!empty($char['image_path'])) {
-                Image::create([
-                    'image_path' => $char['image_path'],
-                    'model' => 'App\Models\Character',
-                    'model_id' => $character->id,
-                ]);
-            }
-
             return response()->json([
                 'success' => true,
                 'game_id' => $game->id,
-                'redirect' => route('game.show', $game),
+                'redirect' => route('game.play', $game),
             ]);
         } catch (\Exception $e) {
             return response()->json([
