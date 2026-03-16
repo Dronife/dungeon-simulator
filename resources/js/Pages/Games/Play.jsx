@@ -13,10 +13,10 @@ function Avatar({ characterId, show }) {
         return <div className="w-8 shrink-0" />;
     }
 
-    // Boxed avatar, ready for future face images
+    // Strictly matches your UI palette: zinc-900 card with zinc-800 border
     return (
-        <div className="w-8 h-8 shrink-0 rounded-md bg-zinc-800 border border-zinc-700 flex items-center justify-center mt-1">
-            <span className="text-zinc-400 font-sans text-xs font-semibold">{letter}</span>
+        <div className="w-8 h-8 shrink-0 rounded-md bg-zinc-900 border border-zinc-800 flex items-center justify-center mt-1">
+            <span className="text-zinc-500 font-sans text-xs font-bold">{letter}</span>
         </div>
     );
 }
@@ -24,7 +24,6 @@ function Avatar({ characterId, show }) {
 // --- Line components ---
 
 function NarratorLine({ text }) {
-    // Serif font, relaxed line height for comfortable reading
     return <p className="text-zinc-300 font-serif text-[1.05rem] leading-relaxed">{text}</p>;
 }
 
@@ -34,14 +33,15 @@ function DialogueLine({ speaker, direction, text, characterId, showAvatar }) {
             <Avatar characterId={characterId} show={showAvatar} />
             <div className="min-w-0">
                 {speaker && showAvatar && (
-                    <p className="text-amber-500/80 font-sans text-xs font-bold uppercase tracking-wide mb-1">
+                    // Using your exact accent color for names: red-500
+                    <p className="text-red-500/90 font-sans text-xs font-bold uppercase tracking-wide mb-1">
                         {speaker}
                     </p>
                 )}
                 {direction && (
                     <p className="text-zinc-500 font-sans text-xs italic mb-1">{direction}</p>
                 )}
-                <p className="text-zinc-100 font-serif text-[1.05rem] leading-relaxed">"{text}"</p>
+                <p className="text-white font-serif text-[1.05rem] leading-relaxed">"{text}"</p>
             </div>
         </div>
     );
@@ -53,6 +53,7 @@ function ActionLine({ speaker, text, characterId, showAvatar }) {
             <Avatar characterId={characterId} show={showAvatar} />
             <div className="min-w-0">
                 {showAvatar && (
+                    // Action names are muted zinc so they don't fight with red dialogue names
                     <p className="text-zinc-500 font-sans text-xs font-bold uppercase tracking-wide mb-1">
                         {speaker}
                     </p>
@@ -67,8 +68,8 @@ function WhisperLine({ text, characterId, showAvatar }) {
     return (
         <div className="flex gap-4">
             <Avatar characterId={characterId} show={showAvatar} />
-            <div className="min-w-0">
-                <p className="text-zinc-400 font-serif italic text-[1.05rem] leading-relaxed">"{text}"</p>
+            <div className="min-w-0 border-l-2 border-zinc-800 pl-3">
+                <p className="text-zinc-500 font-serif italic text-[1.05rem] leading-relaxed">"{text}"</p>
             </div>
         </div>
     );
@@ -77,9 +78,10 @@ function WhisperLine({ text, characterId, showAvatar }) {
 function MechanicLine({ text }) {
     const isSuccess = /success/i.test(text);
     const isFailure = /fail/i.test(text);
-    const colorClass = isSuccess ? 'text-emerald-500/70' : isFailure ? 'text-red-400/70' : 'text-zinc-500';
 
-    // Very clean, simple system message
+    // Kept standard green/red for pass/fail, but deeply muted to match dark theme
+    const colorClass = isSuccess ? 'text-emerald-500/60' : isFailure ? 'text-red-500/60' : 'text-zinc-600';
+
     return (
         <div className="flex justify-center py-4">
             <p className={`${colorClass} font-sans text-xs tracking-widest uppercase font-semibold`}>
@@ -90,9 +92,8 @@ function MechanicLine({ text }) {
 }
 
 function HeadingLine({ text }) {
-    // Clean section divider
     return (
-        <div className="mt-10 mb-6 border-b border-zinc-800/60 pb-3">
+        <div className="mt-10 mb-6 border-b border-zinc-800/80 pb-3 flex justify-center">
             <p className="text-zinc-500 font-sans font-semibold text-xs uppercase tracking-[0.2em] text-center">
                 {text}
             </p>
@@ -107,7 +108,8 @@ function ItalicLine({ text }) {
 function PlayerMessage({ text }) {
     return (
         <div className="flex justify-end my-4">
-            <div className="bg-zinc-800/40 border border-zinc-700/50 rounded-lg px-4 py-3 max-w-[80%]">
+            {/* Matches your "bg-zinc-900 cards" standard from prompt */}
+            <div className="bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-3 max-w-[80%] shadow-sm">
                 <p className="text-zinc-300 font-sans text-sm">{text}</p>
             </div>
         </div>
@@ -136,7 +138,6 @@ function LlmMessage({ content }) {
                 const isMechanic = line.type === 'mechanic';
                 const typeChanged = prev && prev !== line.type;
 
-                // Predictable, comfortable spacing
                 let spacing = 'mt-2';
                 if (i === 0) spacing = '';
                 else if (isHeading) spacing = '';
@@ -186,9 +187,9 @@ function renderLine(line, showAvatar) {
 function LoadingIndicator() {
     return (
         <div className="flex items-center gap-1.5 py-2">
-            <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce [animation-delay:0ms]" />
-            <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce [animation-delay:150ms]" />
-            <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce [animation-delay:300ms]" />
+            <div className="w-1.5 h-1.5 bg-zinc-600 rounded-full animate-bounce [animation-delay:0ms]" />
+            <div className="w-1.5 h-1.5 bg-zinc-600 rounded-full animate-bounce [animation-delay:150ms]" />
+            <div className="w-1.5 h-1.5 bg-zinc-600 rounded-full animate-bounce [animation-delay:300ms]" />
         </div>
     );
 }
@@ -278,7 +279,7 @@ export default function Play({ game }) {
                     {initializing && (
                         <div className="flex items-center justify-center h-full">
                             <div className="text-center space-y-3">
-                                <i className="fa-solid fa-book-open text-3xl text-zinc-600" />
+                                <i className="fa-solid fa-book-open text-3xl text-zinc-700" />
                                 <p className="text-zinc-500 font-sans text-sm">The story begins...</p>
                                 <LoadingIndicator />
                             </div>
@@ -315,7 +316,7 @@ export default function Play({ game }) {
                             onChange={(e) => setInput(e.target.value)}
                             placeholder="What do you do?"
                             disabled={loading || initializing}
-                            className="flex-1 bg-zinc-900 border border-zinc-800 rounded-xl px-5 py-3 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-red-600/50 disabled:opacity-50 font-sans transition-colors"
+                            className="flex-1 bg-zinc-900 border border-zinc-800 rounded-xl px-5 py-3 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-red-600/50 focus:ring-1 focus:ring-red-600/30 disabled:opacity-50 font-sans transition-all shadow-inner"
                         />
                         <button
                             type="submit"
