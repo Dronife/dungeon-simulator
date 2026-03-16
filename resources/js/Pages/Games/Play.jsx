@@ -6,18 +6,17 @@ import Layout from '@/Layouts/Layout';
 function Avatar({ characterId, show }) {
     if (!characterId) return null;
 
-    // First letter of the last part of the ID (e.g. "magister_vane" → "V")
     const parts = characterId.split('_');
     const letter = (parts[parts.length - 1] || '?')[0].toUpperCase();
 
-    // Reserve space but hide when same character continues unbroken
     if (!show) {
-        return <div className="w-7 shrink-0" />;
+        return <div className="w-8 shrink-0" />;
     }
 
+    // Boxed avatar, ready for future face images
     return (
-        <div className="w-7 h-7 shrink-0 rounded bg-zinc-800 border border-zinc-700 flex items-center justify-center">
-            <span className="text-zinc-400 text-xs font-semibold">{letter}</span>
+        <div className="w-8 h-8 shrink-0 rounded-md bg-zinc-800 border border-zinc-700 flex items-center justify-center mt-1">
+            <span className="text-zinc-400 font-sans text-xs font-semibold">{letter}</span>
         </div>
     );
 }
@@ -25,21 +24,24 @@ function Avatar({ characterId, show }) {
 // --- Line components ---
 
 function NarratorLine({ text }) {
-    return <p className="text-zinc-300 leading-relaxed">{text}</p>;
+    // Serif font, relaxed line height for comfortable reading
+    return <p className="text-zinc-300 font-serif text-[1.05rem] leading-relaxed">{text}</p>;
 }
 
 function DialogueLine({ speaker, direction, text, characterId, showAvatar }) {
     return (
-        <div className="flex gap-2.5">
+        <div className="flex gap-4">
             <Avatar characterId={characterId} show={showAvatar} />
             <div className="min-w-0">
                 {speaker && showAvatar && (
-                    <p className="text-red-500/80 text-xs font-semibold uppercase tracking-wide mb-0.5">{speaker}</p>
+                    <p className="text-amber-500/80 font-sans text-xs font-bold uppercase tracking-wide mb-1">
+                        {speaker}
+                    </p>
                 )}
                 {direction && (
-                    <p className="text-zinc-600 text-xs italic mb-0.5">{direction}</p>
+                    <p className="text-zinc-500 font-sans text-xs italic mb-1">{direction}</p>
                 )}
-                <p className="text-zinc-100 font-medium leading-relaxed">"{text}"</p>
+                <p className="text-zinc-100 font-serif text-[1.05rem] leading-relaxed">"{text}"</p>
             </div>
         </div>
     );
@@ -47,13 +49,15 @@ function DialogueLine({ speaker, direction, text, characterId, showAvatar }) {
 
 function ActionLine({ speaker, text, characterId, showAvatar }) {
     return (
-        <div className="flex gap-2.5">
+        <div className="flex gap-4">
             <Avatar characterId={characterId} show={showAvatar} />
             <div className="min-w-0">
                 {showAvatar && (
-                    <p className="text-cyan-900 text-xs font-semibold uppercase tracking-wide mb-0.5">{speaker}</p>
+                    <p className="text-zinc-500 font-sans text-xs font-bold uppercase tracking-wide mb-1">
+                        {speaker}
+                    </p>
                 )}
-                <p className="text-zinc-400 italic leading-relaxed">{text}</p>
+                <p className="text-zinc-400 font-serif italic text-[1.05rem] leading-relaxed">{text}</p>
             </div>
         </div>
     );
@@ -61,9 +65,11 @@ function ActionLine({ speaker, text, characterId, showAvatar }) {
 
 function WhisperLine({ text, characterId, showAvatar }) {
     return (
-        <div className="flex gap-2.5">
+        <div className="flex gap-4">
             <Avatar characterId={characterId} show={showAvatar} />
-            <p className="text-violet-400/70 italic leading-relaxed">"{text}"</p>
+            <div className="min-w-0">
+                <p className="text-zinc-400 font-serif italic text-[1.05rem] leading-relaxed">"{text}"</p>
+            </div>
         </div>
     );
 }
@@ -71,35 +77,38 @@ function WhisperLine({ text, characterId, showAvatar }) {
 function MechanicLine({ text }) {
     const isSuccess = /success/i.test(text);
     const isFailure = /fail/i.test(text);
-    const colorClass = isSuccess ? 'text-emerald-500/60' : isFailure ? 'text-red-300/60' : 'text-zinc-600';
+    const colorClass = isSuccess ? 'text-emerald-500/70' : isFailure ? 'text-red-400/70' : 'text-zinc-500';
 
+    // Very clean, simple system message
     return (
-        <div className="flex justify-center py-5">
-            <p className={`${colorClass} font-mono text-xs tracking-wide uppercase`}>
-                &#x276C; {text} &#x276D;
+        <div className="flex justify-center py-4">
+            <p className={`${colorClass} font-sans text-xs tracking-widest uppercase font-semibold`}>
+                [ {text} ]
             </p>
         </div>
     );
 }
 
 function HeadingLine({ text }) {
+    // Clean section divider
     return (
-        <div className="mt-10 mb-1">
-            <p className="text-zinc-500 font-semibold text-s uppercase tracking-[0.35em]">{text}</p>
-            <hr className="my-2"></hr>
+        <div className="mt-10 mb-6 border-b border-zinc-800/60 pb-3">
+            <p className="text-zinc-500 font-sans font-semibold text-xs uppercase tracking-[0.2em] text-center">
+                {text}
+            </p>
         </div>
     );
 }
 
 function ItalicLine({ text }) {
-    return <p className="text-zinc-500 italic leading-relaxed">{text}</p>;
+    return <p className="text-zinc-500 font-serif italic text-[1.05rem] leading-relaxed">{text}</p>;
 }
 
 function PlayerMessage({ text }) {
     return (
-        <div className="flex justify-end">
-            <div className="bg-zinc-800 rounded-xl px-4 py-2.5 max-w-[85%]">
-                <p className="text-zinc-100">{text}</p>
+        <div className="flex justify-end my-4">
+            <div className="bg-zinc-800/40 border border-zinc-700/50 rounded-lg px-4 py-3 max-w-[80%]">
+                <p className="text-zinc-300 font-sans text-sm">{text}</p>
             </div>
         </div>
     );
@@ -110,35 +119,31 @@ function LlmMessage({ content }) {
     try {
         lines = typeof content === 'string' ? JSON.parse(content) : content;
     } catch {
-        return <p className="text-zinc-300">{content}</p>;
+        return <p className="text-zinc-300 font-serif">{content}</p>;
     }
 
     if (!Array.isArray(lines)) {
-        return <p className="text-zinc-300">{String(content)}</p>;
+        return <p className="text-zinc-300 font-serif">{String(content)}</p>;
     }
 
-    // Track last character_id to determine avatar visibility
-    // Avatar shows on first appearance in an unbroken sequence of the same character_id
-    // A line without character_id (narrator, mechanic, heading) breaks the sequence
     let lastCharacterId = null;
 
     return (
-        <div className="max-w-prose">
+        <div className="max-w-prose mx-auto">
             {lines.map((line, i) => {
                 const prev = i > 0 ? lines[i - 1]?.type : null;
                 const isHeading = line.type === 'heading';
                 const isMechanic = line.type === 'mechanic';
                 const typeChanged = prev && prev !== line.type;
 
-                // Variable spacing: tight within same type, wider between different types
-                let spacing = 'mt-1';
+                // Predictable, comfortable spacing
+                let spacing = 'mt-2';
                 if (i === 0) spacing = '';
-                else if (isHeading) spacing = ''; // heading handles its own mt-6
-                else if (prev === 'heading') spacing = 'mt-2';
-                else if (isMechanic || prev === 'mechanic') spacing = 'mt-2';
-                else if (typeChanged) spacing = 'mt-3';
+                else if (isHeading) spacing = '';
+                else if (prev === 'heading') spacing = 'mt-4';
+                else if (isMechanic || prev === 'mechanic') spacing = 'mt-4';
+                else if (typeChanged || line.character_id !== lastCharacterId) spacing = 'mt-6';
 
-                // Avatar: show only when character_id changes or sequence is broken
                 let showAvatar = false;
                 if (line.character_id) {
                     showAvatar = line.character_id !== lastCharacterId;
@@ -174,7 +179,7 @@ function renderLine(line, showAvatar) {
         case 'italic':
             return <ItalicLine text={line.text} />;
         default:
-            return <p className="text-zinc-400">{line.text}</p>;
+            return <p className="text-zinc-400 font-serif">{line.text}</p>;
     }
 }
 
@@ -196,7 +201,6 @@ export default function Play({ game }) {
     const scrollRef = useRef(null);
     const inputRef = useRef(null);
 
-    // Initialize from props or fetch opening narration
     useEffect(() => {
         if (game.game_chats && game.game_chats.length > 0) {
             setMessages(game.game_chats.map(chat => ({
@@ -208,7 +212,6 @@ export default function Play({ game }) {
         }
     }, []);
 
-    // Auto-scroll to bottom on new messages
     useEffect(() => {
         if (scrollRef.current) {
             scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -266,17 +269,17 @@ export default function Play({ game }) {
 
     return (
         <Layout>
-            <div className="flex flex-col h-full">
+            <div className="flex flex-col h-full bg-zinc-950">
                 {/* Narration log */}
                 <div
                     ref={scrollRef}
-                    className="flex-1 overflow-y-auto px-4 py-4 space-y-4 font-narration text-[16px]"
+                    className="flex-1 overflow-y-auto px-4 py-8 space-y-8 scroll-smooth"
                 >
                     {initializing && (
                         <div className="flex items-center justify-center h-full">
                             <div className="text-center space-y-3">
                                 <i className="fa-solid fa-book-open text-3xl text-zinc-600" />
-                                <p className="text-zinc-500 text-sm">The story begins...</p>
+                                <p className="text-zinc-500 font-sans text-sm">The story begins...</p>
                                 <LoadingIndicator />
                             </div>
                         </div>
@@ -292,15 +295,19 @@ export default function Play({ game }) {
                         </div>
                     ))}
 
-                    {loading && <LoadingIndicator />}
+                    {loading && (
+                        <div className="max-w-prose mx-auto">
+                            <LoadingIndicator />
+                        </div>
+                    )}
                 </div>
 
                 {/* Input bar */}
                 <form
                     onSubmit={handleSend}
-                    className="shrink-0 border-t border-zinc-800 bg-zinc-900/80 backdrop-blur px-4 py-3"
+                    className="shrink-0 border-t border-zinc-800 bg-zinc-950/90 backdrop-blur px-4 py-4"
                 >
-                    <div className="flex gap-2">
+                    <div className="flex gap-3 max-w-4xl mx-auto">
                         <input
                             ref={inputRef}
                             type="text"
@@ -308,12 +315,12 @@ export default function Play({ game }) {
                             onChange={(e) => setInput(e.target.value)}
                             placeholder="What do you do?"
                             disabled={loading || initializing}
-                            className="flex-1 bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-2.5 text-white placeholder-zinc-500 focus:outline-none focus:border-red-500/50 disabled:opacity-50"
+                            className="flex-1 bg-zinc-900 border border-zinc-800 rounded-xl px-5 py-3 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-red-600/50 disabled:opacity-50 font-sans transition-colors"
                         />
                         <button
                             type="submit"
                             disabled={loading || initializing || !input.trim()}
-                            className="px-4 py-2.5 bg-red-600 hover:bg-red-700 disabled:bg-zinc-700 disabled:text-zinc-500 rounded-xl transition font-semibold"
+                            className="px-6 py-3 bg-red-600 hover:bg-red-500 disabled:bg-zinc-800 disabled:text-zinc-600 rounded-xl transition-colors font-sans font-semibold text-white"
                         >
                             <i className="fa-solid fa-paper-plane" />
                         </button>
