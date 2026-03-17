@@ -182,29 +182,23 @@ class GameController extends Controller
         $field = $request->input('field');
         $existingTraits = $request->input('existing_traits', []);
 
-        $context = collect($existingTraits)
-            ->filter()
-            ->map(fn($v, $k) => ucfirst($k) . ': ' . $v)
-            ->implode("\n");
-
         if (in_array($field, ['name', 'surname'])) {
             $race = $existingTraits['race'] ?? 'human';
             $gender = $existingTraits['gender'] ?? 'male';
-            $prompt = "Generate a single fantasy RPG {$field} for a {$gender} {$race} character.";
-            if ($context) {
-                $prompt .= "\n\nExisting character details:\n{$context}";
-            }
-            $prompt .= "\n\nRespond with ONLY the {$field}, nothing else. One word only.";
+            $prompt = "Generate a single fantasy RPG {$field} for a {$gender} {$race} character.\n\nRespond with ONLY the {$field}, nothing else. One word only.";
         } else {
-            $prompt = "Generate a short, creative {$field} for a fantasy RPG character.";
-            if ($context) {
-                $prompt .= "\n\nExisting character traits for context:\n{$context}";
-            }
-            $prompt .= "\n\nRespond with ONLY the trait value, no labels or explanation. Keep it to 1-2 sentences.";
+            $seedGenerator = new \App\Services\SeedGenerator();
+            $seed = $seedGenerator->traitSeed($field);
+
+            $constraints = collect($seed)
+                ->map(fn($v, $k) => ucfirst(str_replace('_', ' ', $k)) . ': ' . $v)
+                ->implode("\n");
+
+            $prompt = "Write a {$field} for an RPG character sheet using these seeds:\n{$constraints}\n\nCombine them into max 1 short sentence. Plain language. No poetry. No dram. No context. No lore. No Year. Just describe the person like you're telling a friend about someone you know. Respond with ONLY the trait text.";
         }
 
         $client = new GeminiClient();
-        $response = $client->generate($prompt, 'You are a creative fantasy RPG character designer.', 0.9);
+        $response = $client->generate($prompt, 'You write RPG character traits. Short, grounded, specific. Like describing a real person, not a fictional archetype.', 0.8);
 
         return response()->json([
             'field' => $field,

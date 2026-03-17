@@ -239,6 +239,379 @@ class SeedGenerator
         return 'Stunning, defined by ' . $features[array_rand($features)];
     }
 
+    public function traitSeed(string $field): array
+    {
+        $seed = match ($field) {
+            'personality' => $this->personalitySeed(),
+            'traits' => $this->traitsSeed(),
+            'trauma' => $this->traumaSeed(),
+            'hobbies' => $this->hobbiesSeed(),
+            'routines' => $this->routinesSeed(),
+            'job' => $this->jobSeed(),
+            'skills' => $this->skillsSeed(),
+            'goals' => $this->goalsSeed(),
+            'secrets' => $this->secretsSeed(),
+            'limits' => $this->limitsSeed(),
+            'intentions' => $this->intentionsSeed(),
+            default => [],
+        };
+
+        if (empty($seed)) {
+            return [];
+        }
+
+        // First key is always the core — never pruned
+        $keys = array_keys($seed);
+        $core = array_shift($keys);
+
+        if (empty($keys)) {
+            return $seed;
+        }
+
+        shuffle($keys);
+        $count = random_int(0, count($keys));
+        $kept = array_slice($keys, 0, $count);
+        $kept[] = $core;
+
+        return array_intersect_key($seed, array_flip($kept));
+    }
+
+    private function personalitySeed(): array
+    {
+        $demeanors = [
+            'talks too much when nervous', 'goes quiet in groups', 'smiles at the wrong moments',
+            'laughs things off even when hurt', 'gets loud when cornered', 'overly polite to strangers',
+            'blunt to the point of rude', 'fidgets constantly', 'stares too long before answering',
+            'changes subject when things get personal', 'agrees with everyone then does what they want',
+            'cracks jokes nobody asked for', 'mumbles when unsure', 'speaks in questions',
+        ];
+
+        $comforts = [
+            'being alone with a task', 'having a plan', 'being around animals', 'a specific drink or food',
+            'routine and repetition', 'being useful to someone', 'high places', 'walking at night',
+            'sharpening or cleaning things', 'humming the same tune', 'counting things',
+            'being near water', 'keeping hands busy', 'organizing belongings',
+        ];
+
+        $irritants = [
+            'being interrupted', 'loud chewing', 'people who lie badly', 'unsolicited advice',
+            'being pitied', 'waiting with nothing to do', 'people touching their things',
+            'being called the wrong name', 'authority pulling rank', 'dishonesty about small things',
+            'people who give up easily', 'broken promises', 'whining', 'being watched while working',
+        ];
+
+        $underPressure = [
+            'shuts down completely', 'becomes hyper-focused and cold', 'lashes out at the nearest person',
+            'makes reckless decisions fast', 'freezes and needs a push', 'gets eerily calm',
+            'talks faster and louder', 'retreats and hides', 'doubles down on whatever they were doing',
+            'looks for someone to follow', 'starts planning obsessively', 'picks a fight',
+        ];
+
+        return [
+            'demeanor' => $demeanors[array_rand($demeanors)],
+            'comfort' => $comforts[array_rand($comforts)],
+            'irritant' => $irritants[array_rand($irritants)],
+            'under_pressure' => $underPressure[array_rand($underPressure)],
+        ];
+    }
+
+    private function traitsSeed(): array
+    {
+        $positive = [
+            'honest even when it costs them', 'loyal past the point of reason', 'patient with children and animals',
+            'generous with food', 'remembers small details about people', 'keeps promises literally',
+            'first to volunteer for grunt work', 'calm in emergencies', 'forgives easily',
+            'shares credit', 'admits mistakes quickly', 'defends people who aren\'t present',
+        ];
+
+        $negative = [
+            'holds grudges for years', 'steals small things out of habit', 'lies about unimportant things',
+            'jealous of anyone doing better', 'lazy when nobody is watching', 'takes credit for group work',
+            'gossips to feel important', 'avoids confrontation until they explode', 'cheats at games',
+            'breaks things when frustrated', 'never apologizes first', 'keeps score of favors',
+        ];
+
+        $quirks = [
+            'collects teeth', 'names their tools', 'won\'t sleep facing a door', 'eats flowers',
+            'talks to the moon', 'refuses to step on cracks', 'always sits facing the exit',
+            'keeps a tally of something nobody understands', 'sleeps with one eye open',
+            'hums before making a decision', 'taps surfaces three times', 'won\'t eat red food',
+        ];
+
+        return [
+            'positive' => $positive[array_rand($positive)],
+            'negative' => $negative[array_rand($negative)],
+            'quirk' => $quirks[array_rand($quirks)],
+        ];
+    }
+
+    private function traumaSeed(): array
+    {
+        $events = [
+            'watched a building collapse with people inside', 'was left behind during an evacuation',
+            'killed someone by accident', 'survived something nobody else did', 'was blamed for a fire',
+            'found a body as a child', 'was locked in a cellar for days', 'saw a parent beg',
+            'was betrayed by a mentor', 'caused a stampede', 'was bitten by something that talked',
+            'woke up somewhere with no memory of how', 'was sold for a debt', 'failed to save a sibling',
+        ];
+
+        $copings = [
+            'avoids the topic entirely, changes subject', 'talks about it too casually',
+            'checks locks and exits obsessively', 'won\'t go near similar places',
+            'drinks or smokes more than they should', 'keeps a specific object close at all times',
+            'has a ritual they do every morning because of it', 'gets aggressive when reminded',
+            'pretends it happened to someone else', 'has made peace with it, mostly',
+        ];
+
+        return [
+            'event' => $events[array_rand($events)],
+            'coping' => $copings[array_rand($copings)],
+            'severity' => random_int(1, 10),
+        ];
+    }
+
+    private function hobbiesSeed(): array
+    {
+        $hobbies = [
+            'whittling small animals', 'fermenting things', 'pressing flowers', 'arm wrestling',
+            'birdwatching', 'foraging mushrooms', 'collecting coins from different places',
+            'sketching people without them knowing', 'fishing but never eating the fish',
+            'stargazing', 'making rope', 'training a pet to do useless tricks',
+            'competitive eating', 'cloud reading', 'stone stacking', 'mending strangers\' clothes',
+        ];
+
+        $count = random_int(1, 3);
+        shuffle($hobbies);
+
+        return [
+            'hobbies' => implode(', ', array_slice($hobbies, 0, $count)),
+            'dedication' => random_int(1, 10),
+        ];
+    }
+
+    private function routinesSeed(): array
+    {
+        $times = ['morning', 'midday', 'evening', 'night'];
+
+        $activities = [
+            'walks the same route', 'checks on a specific person or place', 'prays or meditates',
+            'cleans weapons or tools', 'writes in a journal', 'stretches and exercises',
+            'visits a market stall', 'feeds a stray animal', 'sits in the same spot and watches people',
+            'counts inventory', 'polishes boots', 'brews something specific',
+        ];
+
+        return [
+            'time_of_day' => $times[array_rand($times)],
+            'activity' => $activities[array_rand($activities)],
+            'rigidity' => random_int(1, 10),
+        ];
+    }
+
+    private function jobSeed(): array
+    {
+        $jobs = [
+            'tanner', 'chandler', 'rat catcher', 'courier', 'debt collector',
+            'gravedigger', 'fence (stolen goods)', 'scribe', 'bouncer', 'farrier',
+            'leech collector', 'peat cutter', 'soap maker', 'nightsoil collector',
+            'mule driver', 'quarryman', 'rope maker', 'tinker', 'fuller', 'ditcher',
+        ];
+
+        $attitudes = [
+            'proud of the craft despite what others think', 'does it because nothing else pays',
+            'inherited it and can\'t escape', 'genuinely loves it', 'ashamed and hides it from new people',
+            'treats it as temporary but it\'s been years', 'obsessively good at it',
+        ];
+
+        return [
+            'job' => $jobs[array_rand($jobs)],
+            'attitude' => $attitudes[array_rand($attitudes)],
+            'competence' => random_int(1, 10),
+        ];
+    }
+
+    private function skillsSeed(): array
+    {
+        $skills = [
+            'lockpicking', 'tracking', 'haggling', 'forgery', 'herbalism',
+            'knot tying', 'animal handling', 'fire starting', 'lying convincingly',
+            'reading lips', 'holding breath', 'climbing', 'stitching wounds',
+            'navigation by stars', 'intimidation', 'pickpocketing', 'cooking',
+            'trap making', 'swimming', 'bluffing at cards',
+        ];
+
+        $howLearned = [
+            'trained by a master', 'self-taught through necessity', 'picked up in prison',
+            'learned from a parent', 'stole the knowledge', 'forced to learn as punishment',
+            'learned from a dead person\'s notes', 'taught by a rival', 'natural talent',
+        ];
+
+        $count = random_int(2, 4);
+        shuffle($skills);
+
+        return [
+            'skills' => implode(', ', array_slice($skills, 0, $count)),
+            'how_learned' => $howLearned[array_rand($howLearned)],
+        ];
+    }
+
+    private function goalsSeed(): array
+    {
+        $goals = [
+            'pay off a specific debt', 'find a missing person', 'get back something stolen',
+            'earn enough to leave', 'prove someone wrong', 'get revenge on one person',
+            'build something that lasts', 'be left alone', 'gain a title or position',
+            'find out what really happened', 'protect a specific place', 'learn a forbidden skill',
+            'outlive an enemy', 'earn forgiveness', 'destroy a specific object',
+        ];
+
+        $obstacles = [
+            'no money', 'wrong reputation', 'the target is powerful', 'nobody believes them',
+            'they lack a critical skill', 'someone they love is in the way', 'time is running out',
+            'they don\'t know where to start', 'a past mistake keeps catching up',
+        ];
+
+        return [
+            'goal' => $goals[array_rand($goals)],
+            'obstacle' => $obstacles[array_rand($obstacles)],
+            'urgency' => random_int(1, 10),
+        ];
+    }
+
+    private function secretsSeed(): array
+    {
+        $secrets = [
+            'killed someone and got away with it', 'is not who they claim to be',
+            'owes money to dangerous people', 'can\'t read', 'has a child nobody knows about',
+            'was exiled from their hometown', 'stole something important from an employer',
+            'has a disease they\'re hiding', 'witnessed a crime and said nothing',
+            'is addicted to something', 'betrayed a friend for money', 'has a fake identity',
+            'is wanted in another region', 'made a deal they regret',
+        ];
+
+        $exposure = [
+            'nobody knows', 'one person suspects', 'rumors are starting', 'someone has proof',
+        ];
+
+        $stakes = [
+            'embarrassment', 'exile', 'death', 'losing someone they care about',
+            'imprisonment', 'loss of livelihood',
+        ];
+
+        return [
+            'secret' => $secrets[array_rand($secrets)],
+            'exposure' => $exposure[array_rand($exposure)],
+            'stakes_if_found' => $stakes[array_rand($stakes)],
+        ];
+    }
+
+    private function limitsSeed(): array
+    {
+        $lines = [
+            'won\'t hurt children', 'won\'t steal from the poor', 'won\'t break a sworn oath',
+            'won\'t abandon a companion in danger', 'won\'t use poison', 'won\'t lie to a friend',
+            'won\'t kill an unarmed person', 'won\'t work for the church', 'won\'t beg',
+            'won\'t eat meat', 'won\'t enter a specific place', 'won\'t speak a certain name',
+        ];
+
+        $tested = ['never been tested', 'tested once and held', 'tested and almost broke', 'broke it once'];
+
+        return [
+            'line' => $lines[array_rand($lines)],
+            'tested' => $tested[array_rand($tested)],
+            'firmness' => random_int(1, 10),
+        ];
+    }
+
+    private function intentionsSeed(): array
+    {
+        $targets = [
+            'the local authority', 'a former partner', 'a specific merchant', 'their own family',
+            'a religious order', 'whoever wronged them', 'the person they work for',
+            'a childhood friend', 'a stranger who helped them once', 'themselves',
+        ];
+
+        $intents = [
+            'protect at all costs', 'exploit for personal gain', 'watch and wait',
+            'undermine quietly', 'escape from', 'earn trust of', 'betray when the time comes',
+            'control through favors', 'make amends with',
+        ];
+
+        $timelines = ['immediate', 'soon', 'long term', 'when the right moment comes'];
+
+        return [
+            'toward' => $targets[array_rand($targets)],
+            'intent' => $intents[array_rand($intents)],
+            'timeline' => $timelines[array_rand($timelines)],
+            'transparency' => random_int(1, 10),
+        ];
+    }
+
+    public function generateOpenerSeed(): array
+    {
+        $activities = [
+            'repairing a piece of equipment',
+            'eating a meal alone',
+            'haggling over a price',
+            'waiting for someone who is late',
+            'carrying something heavy across the street',
+            'sharpening a blade',
+            'reading a posted notice',
+            'warming hands by a fire',
+            'feeding scraps to a stray animal',
+            'sorting through a bag of supplies',
+            'patching a hole in clothing',
+            'counting coins at a table',
+            'watching a street performer',
+            'cleaning mud off boots',
+            'sketching something in a journal',
+        ];
+
+        $interruptions = [
+            'someone bumps into them',
+            'a loud crash nearby',
+            'someone asks for directions',
+            'an item rolls to their feet',
+            'a child tugs at their sleeve',
+            'a cart blocks the path',
+            'someone calls out the wrong name',
+            'a dog steals something',
+            'a merchant offers a free sample',
+            'someone drops a heavy crate',
+            'rain starts suddenly',
+            'a door slams open',
+            'a bell rings unexpectedly',
+            'smoke drifts from a nearby building',
+            'two people start arguing loudly',
+        ];
+
+        $npcDemeanors = [
+            'bored', 'friendly', 'annoyed', 'distracted', 'rushing',
+            'tired', 'cheerful', 'suspicious', 'chatty', 'indifferent',
+        ];
+
+        $npcRoles = [
+            'vendor', 'guard', 'laborer', 'courier', 'innkeeper',
+            'street sweeper', 'stable hand', 'cook', 'fishmonger', 'porter',
+            'carpenter', 'lamplighter', 'washerwoman', 'dockhand', 'errand boy',
+        ];
+
+        $timeOfDay = [
+            'early morning, mist still clinging',
+            'midday, sun high and harsh',
+            'late afternoon, long shadows',
+            'dusk, lanterns being lit',
+            'overcast morning, drizzle',
+        ];
+
+        return [
+            'fallback_activity' => $activities[array_rand($activities)],
+            'interruption' => $interruptions[array_rand($interruptions)],
+            'npc_demeanor' => $npcDemeanors[array_rand($npcDemeanors)],
+            'npc_role' => $npcRoles[array_rand($npcRoles)],
+            'time_of_day' => $timeOfDay[array_rand($timeOfDay)],
+        ];
+    }
+
     private function getRaceFeature(string $race): string
     {
         return match ($race) {
