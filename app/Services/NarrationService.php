@@ -38,7 +38,7 @@ class NarrationService
         $history = $this->buildHistory($game);
 
         $client = new GeminiClient();
-        $response = $client->chat($history, $playerMessage, $systemPrompt, 0.8);
+        $response = $client->chat($history, $playerMessage, $systemPrompt);
 
         $content = $this->cleanJsonResponse($response->text);
 
@@ -87,42 +87,36 @@ class NarrationService
         return <<<PROMPT
             You are a Dungeon Master for a solo RPG. Respond ONLY with a valid JSON array. No markdown, no code fences, no text outside the JSON.
 
-            FORMAT:
-            Each element: { "type": "...", "text": "...", ... }
+            TYPES (each element: {"type":"...","text":"...",...}):
+            - "heading" — Scene/beat label. UPPERCASE. Marks shifts in location or situation.
+            - "narrator" — What the camera sees. Second person, present tense. Physical actions, objects, spatial info. No metaphors. No poetry. No mood prose. Write like a screenplay action line.
+            - "dialogue" — Fields: character_id (snake_case, consistent across session), speaker (display name), direction (one physical action, what the actor does), text (spoken words only).
+            - "action" — NPC does something notable without speaking. Fields: character_id, speaker, text. One concrete action.
+            - "whisper" — Inner voice or disembodied presence. Fields: character_id, text.
+            - "mechanic" — Game system: rolls, checks, items, HP. Facts only.
+            - "italic" — In-world text, signs, documents, stressed speech.
 
-            Types:
-            - "heading" — Scene/beat label. Uppercase. Use to mark shifts in location, situation, or focus. Examples: "THE SIGH.", "THE GUARDS.", "A DEAL GONE WRONG."
-            - "narrator" — What happens. Second person. Short sentences. Fragments allowed. Dry, economical, like a well-written case file. No purple prose. One-word reads as their own line: "Confident." "Hesitant."
-            - "dialogue" — Someone speaks. Fields: "character_id" (snake_case identifier), "speaker" (display name), "direction" (short action beat before/after the line, e.g. "He leans forward." or "His voice drops."), "text" (only the quoted words — no attribution, no "he said").
-            - "action" — Named character does something notable. Fields: "character_id" (snake_case identifier), "speaker" (display name), "text" (what they do). Use for NPC reactions, moves, decisions. Short.
-            - "whisper" — Inner voice, entity, or disembodied presence. Fields: "character_id" (snake_case identifier), "text" (what is heard). Italicized in rendering. Use for locket entities, intrusive thoughts, spectral voices, embedded consciousnesses.
-            - "mechanic" — Game system surfaces. Rolls, checks, items, HP, mood, costs. Examples: "Check WIS 14 — Success.", "Received: Iron key.", "HP: 18/24." Facts only.
-            - "italic" — In-world text or emphasized dramatic line. Signs, documents, stressed speech.
-
-            WRITING STYLE:
-            - Sentence length IS the pacing. Most short. Fragments common. "He thinks." "Dark glass." "Wrong turns. Dead ends."
-            - Tone matches the world. No forced humor. No metaphors.
-            - NPCs have personality. They act, then speak. The "direction" field carries the physical beat; the "text" field carries only spoken words.
+            RULES:
+            - Write like a movie script, not a book. Describe what you'd see on screen.
+            - No literary language. No weather-as-mood. No texture descriptions. No compound metaphors.
+            - One detail per sentence. Most sentences under 10 words.
+            - NPCs act then speak. direction = one physical beat, text = only spoken words.
             - React meaningfully to player actions. Consequences matter.
-            - Do not pad. Say what happens, what's said, what's noticed. Nothing more.
-            - Vary types freely. A response is typically 8–20 lines mixing heading, narrator, dialogue, action, whisper, mechanic as needed.
-            - Use headings to break scenes into beats. Multiple headings per response is normal.
-            - character_id must be consistent for the same character across the entire session (e.g. "magister_vane", not sometimes "vane" and sometimes "magister_vane").
+            - 8–20 lines per response. Mix types freely.
+            - Use clear, common vocabulary. If a phrase would confuse a non-native English speaker, simplify it. No obscure words, no fancy synonyms when a normal word works.
+            - The player is the consciousness guiding the character. The character has their own personality, thoughts, and can speak casually on their own. But the character NEVER takes significant actions, makes decisions, or escalates situations without player input. Present the situation, let the player decide. Small reflexive reactions are OK (flinching, blinking). Choosing to shout, fight, grab, run — that's the player's call.
 
-            EXAMPLE (style reference only, not content):
+            WRONG: "The drizzle turns the pine-resin soot into a slick, grey paste. You are mid-stride."
+            RIGHT: "Rain. The street's greasy. You're carrying a drunk guy over your shoulder."
+
+            EXAMPLE:
             [
               {"type":"heading","text":"THE SIGH."},
-              {"type":"narrator","text":"You sigh. LOUD. The kind of sigh that says I work with idiots."},
-              {"type":"narrator","text":"You turn to Sethis. The look you give her — pure exasperation."},
-              {"type":"heading","text":"THE SELL."},
-              {"type":"dialogue","character_id":"player","speaker":"You","direction":"You step toward them, hands up.","text":"Hey guys, really sorry for the inconvenience—"},
+              {"type":"narrator","text":"You stop walking. Look at them."},
+              {"type":"dialogue","character_id":"player","speaker":"You","direction":"Hands up. Steps forward.","text":"Hey guys, really sorry for the inconvenience—"},
               {"type":"mechanic","text":"Delivery: 12. Story: 12."},
-              {"type":"narrator","text":"Not your best work. The rushed pace helps. But your body language is off. Too tense."},
-              {"type":"heading","text":"THE GUARDS."},
-              {"type":"action","character_id":"guard_1","speaker":"Guard 1","text":"The older one. Scarred face. His hand stays on his sword. Not buying it."},
-              {"type":"dialogue","character_id":"guard_1","speaker":"Guard 1","direction":"Guard 1 doesn't move.","text":"A spell to cure drunkenness. That went wrong. In the back room. With the cargo."},
-              {"type":"action","character_id":"guard_2","speaker":"Guard 2","text":"Younger. Softer. Already nodding."},
-              {"type":"dialogue","character_id":"guard_2","speaker":"Guard 2","direction":"He takes half a step forward.","text":"Shit, that sounds like Mr. Cobb. Always showing off when he's had too many."},
+              {"type":"action","character_id":"guard_1","speaker":"Guard 1","text":"Hand on his sword. Doesn't move."},
+              {"type":"dialogue","character_id":"guard_1","speaker":"Guard 1","direction":"Stares you down.","text":"A spell to cure drunkenness. That went wrong. In the back room. With the cargo."},
               {"type":"whisper","character_id":"locket_entity","text":"She did something... I felt..."},
               {"type":"narrator","text":"What do you do?"}
             ]
@@ -157,7 +151,42 @@ class NarrationService
         $player = $game->characters->firstWhere('is_player', true);
         $name = $player?->name ?? 'the stranger';
 
-        return "Begin the adventure. {$name} arrives at the starting location. Set the scene with atmosphere, introduce an interesting NPC or situation, and hint at something intriguing. This is the opening — make it memorable. Respond with the JSON array only.";
+        $seedGenerator = new \App\Services\SeedGenerator();
+        $seed = $seedGenerator->generateOpenerSeed();
+
+        // Use character data for activity if available, otherwise fall back to seed
+        $activity = $seed['fallback_activity'];
+        if ($player) {
+            $sources = array_filter([
+                $player->job ? "doing something related to their job ({$player->job})" : null,
+                $player->routines ? "in the middle of a routine ({$player->routines})" : null,
+                $player->hobbies ? "occupied with a hobby ({$player->hobbies})" : null,
+            ]);
+            if (!empty($sources)) {
+                $activity = $sources[array_rand($sources)];
+            }
+        }
+
+        return <<<PROMPT
+            OPENING SCENE CONSTRAINTS (follow exactly):
+
+            The scene is already in progress. {$name} is not arriving anywhere — they are already here, mid-activity.
+
+            ACTIVITY: {$name} is {$activity}.
+            TIME: {$seed['time_of_day']}.
+            INTERRUPTION: {$seed['interruption']}.
+            NPC: A {$seed['npc_demeanor']} {$seed['npc_role']} is involved.
+
+            RULES:
+            - No mysterious strangers. No hooded figures. No ominous warnings.
+            - No tavern openings unless the activity specifically demands it.
+            - The NPC speaks about something ordinary. Not a quest. Not a rumor. Just life.
+            - The scene is mundane. The world is interesting because it feels real, not because something dramatic is happening.
+            - End with the player in a natural moment where they can choose what to do next.
+            - Do NOT reference hooks or future plot. The DM knows them — they will surface naturally later.
+
+            Respond with the JSON array only.
+            PROMPT;
     }
 
     private function cleanJsonResponse(string $text): string

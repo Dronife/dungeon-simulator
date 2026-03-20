@@ -56,9 +56,9 @@ class GeminiClient
         );
     }
 
-    public function chat(array $history, string $message, ?string $systemPrompt = null, float $temperature = 0.7): LlmResponse
+    public function chat(array $history, string $message, ?string $systemPrompt = null, float $temperature = 0.7, int $thinkingBudget = 0): LlmResponse
     {
-        $generativeModel = Gemini::generativeModel(model: $this->model);
+        $generativeModel = Gemini::generativeModel(model: self::MODEL_25_FLASH_LITE);
 
         if ($systemPrompt) {
             $generativeModel = $generativeModel->withSystemInstruction(
@@ -67,8 +67,9 @@ class GeminiClient
         }
 
         $generativeModel = $generativeModel->withGenerationConfig(
-            new GenerationConfig(temperature: $temperature)
+            new GenerationConfig(temperature: $temperature, thinkingConfig: new ThinkingConfig(includeThoughts: $thinkingBudget !== 0, thinkingBudget: $thinkingBudget))
         );
+
 
         // Convert history to Content objects
         $formattedHistory = array_map(function ($item) {
