@@ -1,0 +1,191 @@
+// --- Avatar ---
+
+function Avatar({ characterId, show }) {
+    if (!characterId) return null;
+
+    const parts = characterId.split('_');
+    const letter = (parts[parts.length - 1] || '?')[0].toUpperCase();
+
+    if (!show) {
+        return <div className="w-8 shrink-0" />;
+    }
+
+    return (
+        <div className="w-8 h-8 shrink-0 rounded-md bg-zinc-900 border border-zinc-800 flex items-center justify-center mt-1">
+            <span className="text-zinc-500 font-sans text-xs font-bold">{letter}</span>
+        </div>
+    );
+}
+
+// --- Line components ---
+
+function NarratorLine({ text }) {
+    return <p className="text-zinc-300 font-serif text-[1.05rem] leading-relaxed">{text}</p>;
+}
+
+function DialogueLine({ speaker, direction, text, characterId, showAvatar }) {
+    return (
+        <div className="flex gap-4">
+            <Avatar characterId={characterId} show={showAvatar} />
+            <div className="min-w-0">
+                {speaker && showAvatar && (
+                    <p className="text-red-500/90 font-sans text-xs font-bold uppercase tracking-wide mb-1">
+                        {speaker}
+                    </p>
+                )}
+                {direction && (
+                    <p className="text-zinc-500 font-sans text-xs italic mb-1">{direction}</p>
+                )}
+                <p className="text-white font-serif text-[1.05rem] leading-relaxed">"{text}"</p>
+            </div>
+        </div>
+    );
+}
+
+function ActionLine({ speaker, text, characterId, showAvatar }) {
+    return (
+        <div className="flex gap-4">
+            <Avatar characterId={characterId} show={showAvatar} />
+            <div className="min-w-0">
+                {showAvatar && (
+                    <p className="text-zinc-500 font-sans text-xs font-bold uppercase tracking-wide mb-1">
+                        {speaker}
+                    </p>
+                )}
+                <p className="text-zinc-400 font-serif italic text-[1.05rem] leading-relaxed">{text}</p>
+            </div>
+        </div>
+    );
+}
+
+function WhisperLine({ text, characterId, showAvatar }) {
+    return (
+        <div className="flex gap-4">
+            <Avatar characterId={characterId} show={showAvatar} />
+            <div className="min-w-0 border-l-2 border-zinc-800 pl-3">
+                <p className="text-zinc-500 font-serif italic text-[1.05rem] leading-relaxed">"{text}"</p>
+            </div>
+        </div>
+    );
+}
+
+function MechanicLine({ text }) {
+    const isSuccess = /success/i.test(text);
+    const isFailure = /fail/i.test(text);
+
+    const colorClass = isSuccess ? 'text-emerald-500/60' : isFailure ? 'text-red-500/60' : 'text-zinc-600';
+
+    return (
+        <div className="flex justify-center py-4">
+            <p className={`${colorClass} font-sans text-xs tracking-widest uppercase font-semibold`}>
+                [ {text} ]
+            </p>
+        </div>
+    );
+}
+
+function HeadingLine({ text }) {
+    return (
+        <div className="mt-10 mb-6 border-b border-zinc-800/80 pb-3 flex justify-center">
+            <p className="text-zinc-500 font-sans font-semibold text-xs uppercase tracking-[0.2em] text-center">
+                {text}
+            </p>
+        </div>
+    );
+}
+
+function ItalicLine({ text }) {
+    return <p className="text-zinc-500 font-serif italic text-[1.05rem] leading-relaxed">{text}</p>;
+}
+
+// --- Rendering ---
+
+function renderLine(line, showAvatar) {
+    switch (line.type) {
+        case 'narrator':
+            return <NarratorLine text={line.text} />;
+        case 'dialogue':
+            return <DialogueLine speaker={line.speaker} direction={line.direction} text={line.text} characterId={line.character_id} showAvatar={showAvatar} />;
+        case 'action':
+            return <ActionLine speaker={line.speaker} text={line.text} characterId={line.character_id} showAvatar={showAvatar} />;
+        case 'whisper':
+            return <WhisperLine text={line.text} characterId={line.character_id} showAvatar={showAvatar} />;
+        case 'mechanic':
+            return <MechanicLine text={line.text} />;
+        case 'heading':
+            return <HeadingLine text={line.text} />;
+        case 'italic':
+            return <ItalicLine text={line.text} />;
+        default:
+            return <p className="text-zinc-400 font-serif">{line.text}</p>;
+    }
+}
+
+// --- Message containers ---
+
+export function PlayerMessage({ text }) {
+    return (
+        <div className="flex justify-end my-4">
+            <div className="bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-3 max-w-[80%] shadow-sm">
+                <p className="text-zinc-300 font-sans text-sm">{text}</p>
+            </div>
+        </div>
+    );
+}
+
+export function LlmMessage({ content }) {
+    let lines = [];
+    try {
+        lines = typeof content === 'string' ? JSON.parse(content) : content;
+    } catch {
+        return <p className="text-zinc-300 font-serif">{content}</p>;
+    }
+
+    if (!Array.isArray(lines)) {
+        return <p className="text-zinc-300 font-serif">{String(content)}</p>;
+    }
+
+    let lastCharacterId = null;
+
+    return (
+        <div className="max-w-prose mx-auto">
+            {lines.map((line, i) => {
+                const prev = i > 0 ? lines[i - 1]?.type : null;
+                const isHeading = line.type === 'heading';
+                const isMechanic = line.type === 'mechanic';
+                const typeChanged = prev && prev !== line.type;
+
+                let spacing = 'mt-2';
+                if (i === 0) spacing = '';
+                else if (isHeading) spacing = '';
+                else if (prev === 'heading') spacing = 'mt-4';
+                else if (isMechanic || prev === 'mechanic') spacing = 'mt-4';
+                else if (typeChanged || line.character_id !== lastCharacterId) spacing = 'mt-6';
+
+                let showAvatar = false;
+                if (line.character_id) {
+                    showAvatar = line.character_id !== lastCharacterId;
+                    lastCharacterId = line.character_id;
+                } else {
+                    lastCharacterId = null;
+                }
+
+                return (
+                    <div key={i} className={spacing}>
+                        {renderLine(line, showAvatar)}
+                    </div>
+                );
+            })}
+        </div>
+    );
+}
+
+export function LoadingIndicator() {
+    return (
+        <div className="flex items-center gap-1.5 py-2">
+            <div className="w-1.5 h-1.5 bg-zinc-600 rounded-full animate-bounce [animation-delay:0ms]" />
+            <div className="w-1.5 h-1.5 bg-zinc-600 rounded-full animate-bounce [animation-delay:150ms]" />
+            <div className="w-1.5 h-1.5 bg-zinc-600 rounded-full animate-bounce [animation-delay:300ms]" />
+        </div>
+    );
+}
