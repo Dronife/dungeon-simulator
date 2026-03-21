@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>The Obsidian Archive - Adventure</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&amp;family=Manrope:wght@200..800&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "secondary-container": "#920703",
+                        "on-secondary-fixed-variant": "#920703",
+                        "error": "#ffb4ab",
+                        "surface-container-lowest": "#0d0e13",
+                        "tertiary-fixed-dim": "#ffb5a0",
+                        "surface-dim": "#121318",
+                        "surface-tint": "#e9c349",
+                        "on-error-container": "#ffdad6",
+                        "outline-variant": "#554434",
+                        "on-primary-container": "#534100",
+                        "primary": "#efc84e",
+                        "on-secondary-fixed": "#410000",
+                        "secondary": "#ffb4a8",
+                        "on-tertiary-fixed": "#3b0900",
+                        "surface-container-high": "#292a2f",
+                        "secondary-fixed-dim": "#ffb4a8",
+                        "on-surface": "#e3e1e9",
+                        "tertiary-fixed": "#ffdbd1",
+                        "inverse-primary": "#735c00",
+                        "on-primary-fixed": "#241a00",
+                        "on-tertiary-fixed-variant": "#872000",
+                        "on-primary-fixed-variant": "#574500",
+                        "on-tertiary": "#601400",
+                        "surface-container-low": "#1a1b21",
+                        "on-secondary-container": "#ff9a8a",
+                        "outline": "#a38d7a",
+                        "on-error": "#690005",
+                        "error-container": "#93000a",
+                        "on-surface-variant": "#dbc2ad",
+                        "primary-container": "#d2ad35",
+                        "background": "#121318",
+                        "surface-bright": "#38393f",
+                        "primary-fixed-dim": "#e9c349",
+                        "secondary-fixed": "#ffdad4",
+                        "on-primary": "#3c2f00",
+                        "inverse-on-surface": "#2f3036",
+                        "on-tertiary-container": "#821f00",
+                        "primary-fixed": "#ffe088",
+                        "tertiary-container": "#ff9476",
+                        "surface-variant": "#34343a",
+                        "inverse-surface": "#e3e1e9",
+                        "on-background": "#e3e1e9",
+                        "on-secondary": "#690000",
+                        "surface-container-highest": "#34343a",
+                        "surface": "#121318",
+                        "tertiary": "#ffbdab",
+                        "surface-container": "#1e1f25"
+                    },
+                    fontFamily: {
+                        "headline": ["Newsreader"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    },
+                    borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+                },
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
+        }
+        .elysium-texture {
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            opacity: 0.05;
+        }
+        .gold-shimmer {
+            background: linear-gradient(90deg, #efc84e 0%, #d2ad35 50%, #efc84e 100%);
+            background-size: 200% auto;
+        }
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body selection:bg-primary selection:text-on-primary">
+<!-- Top Navigation Shell -->
+<!-- Main Content Canvas -->
+<main class="min-h-screen flex flex-col pb-24">
+    <!-- Hero Environment Section (Reduced height to ~33% of screen) -->
+    <section class="relative h-[33vh] w-full overflow-hidden">
+        <img alt="The Misty Ruins" class="w-full h-full object-cover brightness-[0.7] contrast-[1.1]" data-alt="Epic oil painting of misty torch-lit ruined castle" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBYOY86q0YSW5W4C9sDaT37Ln9RDa04gLAwidD2_msD_HAAYL5T0PGe62L2-mE5bB06-88cTS4qEgOX_3E3B6Byd052veHxUqAg28EphUun7DDSvgjyo_tI_oA1SaCCGPnaSI8tYmbAC922YHEQTwVcHcYrnOxsBq-6HhyTaJGkunaVLMPjef75fWqL9BgVfLpF51bt0CoWoIs1Q-v9CpQrfPNOO3FIwQ7pGzdB_AztaDQTGdqS_7fG7ZIjharLQbgU0IOxmynTVKY9"/>
+        <!-- Vignette & Atmospheric Overlays -->
+        <div class="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent"></div>
+        <div class="absolute inset-0 bg-gradient-to-b from-background/40 via-transparent to-transparent"></div>
+        <!-- Location Label Overlay (Slightly smaller title) -->
+        <div class="absolute bottom-6 left-8">
+            <div class="flex flex-col">
+                <span class="font-sans text-[9px] font-bold uppercase tracking-[0.3em] text-primary/80 mb-1">Region: Ironhold Valley</span>
+                <h1 class="font-serif text-3xl md:text-4xl text-on-surface tracking-tight leading-none">The Obsidian Gate</h1>
+            </div>
+        </div>
+        <!-- Magical Glow Particle -->
+        <div class="absolute top-1/2 right-12 w-24 h-24 bg-primary/10 rounded-full blur-3xl"></div>
+    </section>
+    <!-- Narration Window (Tighter spacing, refined hierarchy) -->
+    <section class="flex-grow flex flex-col items-center px-6 md:px-12 py-8 relative">
+        <div class="max-w-2xl w-full relative z-10">
+            <!-- Disco Elysium Inspired Panel -->
+            <div class="relative bg-surface-container-lowest p-6 md:p-10 shadow-2xl border-l border-primary/5">
+                <div class="elysium-texture absolute inset-0 pointer-events-none"></div>
+                <div class="flex items-center gap-4 mb-6 opacity-60">
+                    <div class="h-[1px] flex-grow bg-gradient-to-r from-transparent via-outline-variant to-transparent"></div>
+                    <span class="font-sans text-[9px] font-bold uppercase tracking-widest text-outline">Current Episode</span>
+                    <div class="h-[1px] flex-grow bg-gradient-to-r from-transparent via-outline-variant to-transparent"></div>
+                </div>
+                <div class="space-y-5">
+                    <p class="font-serif text-[17px] leading-relaxed text-on-surface/90 italic first-letter:text-4xl first-letter:font-bold first-letter:text-primary first-letter:mr-2 first-letter:float-left first-letter:mt-1">
+                        The heavy scent of ozone and ancient stone fills your lungs as the iron-shod doors of the Archive groan inward. Before you, a spiral of mist dances around the feet of a headless sentinel, its stone sword still gleaming with a faint, malevolent amber light.
+                    </p>
+                    <div class="py-3 border-y border-primary/10 bg-primary/5 px-6 -mx-6 md:-mx-10">
+                        <p class="font-serif text-lg leading-snug text-primary/90">
+                            "Who seeks entry into the silence of the ages?" <span class="text-on-surface/50 not-italic font-sans text-[10px] uppercase tracking-tighter ml-2 block mt-1">Internalized Thought: Fear</span>
+                        </p>
+                    </div>
+                    <p class="font-serif text-[17px] leading-relaxed text-on-surface/90">
+                        The voice echoes not in the hall, but directly against the walls of your skull. Your grip on your staff tightens. The shadows here are not merely absent light; they are hungry.
+                    </p>
+                </div>
+                <!-- Ambient Narrative Accents -->
+                <div class="absolute -top-1 -right-1 w-12 h-12 border-t border-r border-primary/20 pointer-events-none"></div>
+                <div class="absolute -bottom-1 -left-1 w-12 h-12 border-b border-l border-primary/20 pointer-events-none"></div>
+            </div>
+        </div>
+    </section>
+    <!-- Action Bar Section (Persistent buttons) -->
+    <section class="mt-auto px-6 pb-28 pt-4 flex justify-center items-center gap-4 max-w-4xl mx-auto w-full">
+        <div class="grid grid-cols-4 gap-3 md:gap-6 w-full items-center">
+            <!-- Explore -->
+            <button class="group flex flex-col items-center gap-2 p-3 bg-surface-container-high hover:bg-surface-container-highest transition-all duration-300 rounded-lg border-b-2 border-transparent hover:border-primary/40 shadow-lg active:scale-95">
+                <span class="material-symbols-outlined text-primary/70 group-hover:text-primary transition-colors text-2xl" data-icon="explore">explore</span>
+                <span class="font-sans text-[9px] font-bold uppercase tracking-widest text-on-surface/80 group-hover:text-primary">Explore</span>
+            </button>
+            <!-- Interact -->
+            <button class="group flex flex-col items-center gap-2 p-3 bg-surface-container-high hover:bg-surface-container-highest transition-all duration-300 rounded-lg border-b-2 border-transparent hover:border-primary/40 shadow-lg active:scale-95">
+                <span class="material-symbols-outlined text-primary/70 group-hover:text-primary transition-colors text-2xl" data-icon="touch_app">touch_app</span>
+                <span class="font-sans text-[9px] font-bold uppercase tracking-widest text-on-surface/80 group-hover:text-primary">Interact</span>
+            </button>
+            <!-- Rest -->
+            <button class="group flex flex-col items-center gap-2 p-3 bg-surface-container-high hover:bg-surface-container-highest transition-all duration-300 rounded-lg border-b-2 border-transparent hover:border-primary/40 shadow-lg active:scale-95">
+                <span class="material-symbols-outlined text-primary/70 group-hover:text-primary transition-colors text-2xl" data-icon="bedtime">bedtime</span>
+                <span class="font-sans text-[9px] font-bold uppercase tracking-widest text-on-surface/80 group-hover:text-primary">Rest</span>
+            </button>
+            <!-- Die Roll (CTA) -->
+            <button class="relative group h-full flex flex-col items-center justify-center p-3 gold-shimmer rounded-lg shadow-[0_0_20px_rgba(239,200,78,0.3)] hover:shadow-[0_0_30px_rgba(239,200,78,0.5)] transition-all duration-500 active:scale-90 overflow-hidden">
+                <div class="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors"></div>
+                <span class="material-symbols-outlined text-on-primary text-3xl mb-1 drop-shadow-md" data-icon="casino" style="font-variation-settings: 'FILL' 1;">casino</span>
+                <span class="font-sans text-[9px] font-extrabold uppercase tracking-widest text-on-primary">Fate</span>
+            </button>
+        </div>
+    </section>
+</main>
+<!-- Bottom Navigation Shell (Consistent) -->
+<nav class="fixed bottom-0 w-full z-50 flex justify-around items-center px-4 pb-6 pt-2 bg-[#121318]/90 backdrop-blur-xl border-t border-[#efc84e]/15 shadow-[0_-10px_30px_rgba(0,0,0,0.8)]">
+    <!-- Adventure (Active) -->
+    <a class="flex flex-col items-center justify-center text-[#efc84e] bg-[#efc84e]/10 rounded-xl py-1 px-4 ring-1 ring-[#efc84e]/30 scale-90 duration-150" href="#">
+        <span class="material-symbols-outlined mb-1" data-icon="explore">explore</span>
+        <span class="font-sans Manrope text-[10px] font-bold uppercase tracking-widest">Adventure</span>
+    </a>
+    <!-- Inventory -->
+    <a class="flex flex-col items-center justify-center text-[#e3e1e9]/60 hover:text-[#e3e1e9] hover:bg-[#34343a] transition-all duration-200" href="#">
+        <span class="material-symbols-outlined mb-1" data-icon="backpack">backpack</span>
+        <span class="font-sans Manrope text-[10px] font-bold uppercase tracking-widest">Inventory</span>
+    </a>
+    <!-- World -->
+    <a class="flex flex-col items-center justify-center text-[#e3e1e9]/60 hover:text-[#e3e1e9] hover:bg-[#34343a] transition-all duration-200" href="#">
+        <span class="material-symbols-outlined mb-1" data-icon="map">map</span>
+        <span class="font-sans Manrope text-[10px] font-bold uppercase tracking-widest">World</span>
+    </a>
+    <!-- Skills -->
+    <a class="flex flex-col items-center justify-center text-[#e3e1e9]/60 hover:text-[#e3e1e9] hover:bg-[#34343a] transition-all duration-200" href="#">
+        <span class="material-symbols-outlined mb-1" data-icon="auto_awesome">auto_awesome</span>
+        <span class="font-sans Manrope text-[10px] font-bold uppercase tracking-widest">Skills</span>
+    </a>
+</nav>
+</body></html>
