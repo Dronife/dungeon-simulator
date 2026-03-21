@@ -5,8 +5,8 @@ WORKDIR /var/www
 # ============ CORE (Laravel minimum) ============
 RUN apt-get update && apt-get install -y \
     git unzip curl \
-    libzip-dev libonig-dev \
-    && docker-php-ext-install pdo_mysql mbstring zip \
+    libzip-dev libonig-dev libpng-dev \
+    && docker-php-ext-install pdo_mysql mbstring zip gd \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # ============ PDF EXPORT (Puppeteer/Chromium) ============
