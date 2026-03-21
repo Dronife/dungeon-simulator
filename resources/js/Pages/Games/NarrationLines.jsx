@@ -11,8 +11,8 @@ function Avatar({ characterId, show }) {
     }
 
     return (
-        <div className="w-8 h-8 shrink-0 rounded-md bg-zinc-900 border border-zinc-800 flex items-center justify-center mt-1">
-            <span className="text-zinc-500 font-sans text-xs font-bold">{letter}</span>
+        <div className="w-8 h-8 shrink-0 rounded-md bg-[#1e1f25] border border-[#554434]/50 flex items-center justify-center mt-1">
+            <span className="text-[#a38d7a] font-sans text-xs font-bold">{letter}</span>
         </div>
     );
 }
@@ -20,23 +20,23 @@ function Avatar({ characterId, show }) {
 // --- Line components ---
 
 function NarratorLine({ text }) {
-    return <p className="text-zinc-300 font-serif text-[1.05rem] leading-relaxed">{text}</p>;
+    return <p className="text-[#e3e1e9]/90 font-narration text-[1.05rem] leading-relaxed">{text}</p>;
 }
 
 function DialogueLine({ speaker, direction, text, characterId, showAvatar }) {
     return (
         <div className="flex gap-4">
             <Avatar characterId={characterId} show={showAvatar} />
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
                 {speaker && showAvatar && (
-                    <p className="text-red-500/90 font-sans text-xs font-bold uppercase tracking-wide mb-1">
+                    <p className="text-[#efc84e]/90 font-sans text-xs font-bold uppercase tracking-wide mb-1">
                         {speaker}
                     </p>
                 )}
                 {direction && (
-                    <p className="text-zinc-500 font-sans text-xs italic mb-1">{direction}</p>
+                    <p className="text-[#a38d7a] font-sans text-xs italic mb-1">{direction}</p>
                 )}
-                <p className="text-white font-serif text-[1.05rem] leading-relaxed">"{text}"</p>
+                <p className="text-[#e3e1e9] font-narration text-[1.05rem] leading-relaxed">"{text}"</p>
             </div>
         </div>
     );
@@ -48,11 +48,11 @@ function ActionLine({ speaker, text, characterId, showAvatar }) {
             <Avatar characterId={characterId} show={showAvatar} />
             <div className="min-w-0">
                 {showAvatar && (
-                    <p className="text-zinc-500 font-sans text-xs font-bold uppercase tracking-wide mb-1">
+                    <p className="text-[#a38d7a] font-sans text-xs font-bold uppercase tracking-wide mb-1">
                         {speaker}
                     </p>
                 )}
-                <p className="text-zinc-400 font-serif italic text-[1.05rem] leading-relaxed">{text}</p>
+                <p className="text-[#dbc2ad] font-narration italic text-[1.05rem] leading-relaxed">{text}</p>
             </div>
         </div>
     );
@@ -62,8 +62,8 @@ function WhisperLine({ text, characterId, showAvatar }) {
     return (
         <div className="flex gap-4">
             <Avatar characterId={characterId} show={showAvatar} />
-            <div className="min-w-0 border-l-2 border-zinc-800 pl-3">
-                <p className="text-zinc-500 font-serif italic text-[1.05rem] leading-relaxed">"{text}"</p>
+            <div className="min-w-0 border-l-2 border-[#554434] pl-3">
+                <p className="text-[#a38d7a] font-narration italic text-[1.05rem] leading-relaxed">"{text}"</p>
             </div>
         </div>
     );
@@ -73,11 +73,11 @@ function MechanicLine({ text }) {
     const isSuccess = /success/i.test(text);
     const isFailure = /fail/i.test(text);
 
-    const colorClass = isSuccess ? 'text-emerald-500/60' : isFailure ? 'text-red-500/60' : 'text-zinc-600';
+    const colorClass = isSuccess ? 'text-emerald-500/60' : isFailure ? 'text-red-500/60' : 'text-[#a38d7a]/60';
 
     return (
         <div className="flex justify-center py-4">
-            <p className={`${colorClass} font-sans text-xs tracking-widest uppercase font-semibold`}>
+            <p className={`${colorClass} font-mono text-xs tracking-widest uppercase font-semibold`}>
                 [ {text} ]
             </p>
         </div>
@@ -86,8 +86,8 @@ function MechanicLine({ text }) {
 
 function HeadingLine({ text }) {
     return (
-        <div className="mt-10 mb-6 border-b border-zinc-800/80 pb-3 flex justify-center">
-            <p className="text-zinc-500 font-sans font-semibold text-xs uppercase tracking-[0.2em] text-center">
+        <div className="mt-10 mb-6 border-b border-[#554434]/50 pb-3 flex justify-center">
+            <p className="text-[#a38d7a] font-sans font-semibold text-xs uppercase tracking-[0.2em] text-center">
                 {text}
             </p>
         </div>
@@ -95,7 +95,7 @@ function HeadingLine({ text }) {
 }
 
 function ItalicLine({ text }) {
-    return <p className="text-zinc-500 font-serif italic text-[1.05rem] leading-relaxed">{text}</p>;
+    return <p className="text-[#a38d7a] font-narration italic text-[1.05rem] leading-relaxed">{text}</p>;
 }
 
 // --- Rendering ---
@@ -117,7 +117,7 @@ function renderLine(line, showAvatar) {
         case 'italic':
             return <ItalicLine text={line.text} />;
         default:
-            return <p className="text-zinc-400 font-serif">{line.text}</p>;
+            return <p className="text-[#dbc2ad] font-narration">{line.text}</p>;
     }
 }
 
@@ -125,10 +125,11 @@ function renderLine(line, showAvatar) {
 
 export function PlayerMessage({ text }) {
     return (
-        <div className="flex justify-end my-4">
-            <div className="bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-3 max-w-[80%] shadow-sm">
-                <p className="text-zinc-300 font-sans text-sm">{text}</p>
-            </div>
+        <div className="py-3 border-y border-[#efc84e]/10 bg-[#efc84e]/5 px-6 -mx-6 md:-mx-10">
+            <p className="text-[#efc84e]/80 font-sans text-sm">
+                <span className="text-[#a38d7a] text-[10px] uppercase tracking-wider font-bold mr-2">Action:</span>
+                {text}
+            </p>
         </div>
     );
 }
@@ -138,17 +139,17 @@ export function LlmMessage({ content }) {
     try {
         lines = typeof content === 'string' ? JSON.parse(content) : content;
     } catch {
-        return <p className="text-zinc-300 font-serif">{content}</p>;
+        return <p className="text-[#e3e1e9]/90 font-narration">{content}</p>;
     }
 
     if (!Array.isArray(lines)) {
-        return <p className="text-zinc-300 font-serif">{String(content)}</p>;
+        return <p className="text-[#e3e1e9]/90 font-narration">{String(content)}</p>;
     }
 
     let lastCharacterId = null;
 
     return (
-        <div className="max-w-prose mx-auto">
+        <div>
             {lines.map((line, i) => {
                 const prev = i > 0 ? lines[i - 1]?.type : null;
                 const isHeading = line.type === 'heading';
@@ -183,9 +184,9 @@ export function LlmMessage({ content }) {
 export function LoadingIndicator() {
     return (
         <div className="flex items-center gap-1.5 py-2">
-            <div className="w-1.5 h-1.5 bg-zinc-600 rounded-full animate-bounce [animation-delay:0ms]" />
-            <div className="w-1.5 h-1.5 bg-zinc-600 rounded-full animate-bounce [animation-delay:150ms]" />
-            <div className="w-1.5 h-1.5 bg-zinc-600 rounded-full animate-bounce [animation-delay:300ms]" />
+            <div className="w-1.5 h-1.5 bg-[#efc84e]/40 rounded-full animate-bounce [animation-delay:0ms]" />
+            <div className="w-1.5 h-1.5 bg-[#efc84e]/40 rounded-full animate-bounce [animation-delay:150ms]" />
+            <div className="w-1.5 h-1.5 bg-[#efc84e]/40 rounded-full animate-bounce [animation-delay:300ms]" />
         </div>
     );
 }

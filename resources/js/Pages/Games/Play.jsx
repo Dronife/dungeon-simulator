@@ -1,118 +1,17 @@
 import { useState, useEffect, useRef } from 'react';
-import { PlayerMessage, LlmMessage, LoadingIndicator } from './NarrationLines';
+import { LlmMessage, LoadingIndicator } from './NarrationLines';
 
-const BANNER_AUTO_CLOSE_MS = 5000;
-
-function SceneBanner({ image, placeName, expanded, onToggle, onImageTap }) {
-    const [countdown, setCountdown] = useState(0);
-
-    useEffect(() => {
-        if (!expanded) return;
-        setCountdown(BANNER_AUTO_CLOSE_MS);
-        const interval = setInterval(() => {
-            setCountdown(prev => {
-                if (prev <= 100) {
-                    clearInterval(interval);
-                    onToggle();
-                    return 0;
-                }
-                return prev - 100;
-            });
-        }, 100);
-        return () => clearInterval(interval);
-    }, [expanded]);
-
-    if (!image) return null;
-
-    const progress = countdown / BANNER_AUTO_CLOSE_MS;
-    const circumference = 2 * Math.PI * 8;
-
-    return (
-        <div className="shrink-0 relative w-full overflow-hidden">
-            {/* Expanded: show the image */}
-            <div
-                className={`relative w-full transition-all duration-500 ease-in-out ${expanded ? 'h-[120px]' : 'h-0'}`}
-            >
-                <button onClick={onImageTap} className="absolute inset-0 w-full h-full cursor-pointer">
-                    <img
-                        src={image}
-                        alt=""
-                        className="w-full h-full object-cover object-center"
-                    />
-                </button>
-                <div className="absolute bottom-0 left-0 right-0 h-[30px] bg-gradient-to-t from-zinc-950 to-transparent pointer-events-none" />
-
-                {/* Countdown ring — top right */}
-                {expanded && (
-                    <button onClick={onToggle} className="absolute top-2.5 right-3">
-                        <svg width="20" height="20" className="rotate-[-90deg]">
-                            <circle cx="10" cy="10" r="8" fill="none" stroke="white" strokeOpacity="0.15" strokeWidth="2" />
-                            <circle
-                                cx="10" cy="10" r="8" fill="none"
-                                stroke="white" strokeOpacity="0.5" strokeWidth="2"
-                                strokeDasharray={circumference}
-                                strokeDashoffset={circumference * (1 - progress)}
-                                strokeLinecap="round"
-                                className="transition-none"
-                            />
-                        </svg>
-                    </button>
-                )}
-            </div>
-
-            {/* Place name tab — always visible, clickable to toggle */}
-            <button
-                onClick={onToggle}
-                className="w-full flex items-center justify-center gap-2 py-1.5 bg-zinc-900/80 border-b border-zinc-800/50"
-            >
-                <span className="text-zinc-500 font-sans text-[14px] uppercase tracking-[0.15em] font-semibold">
-                    {placeName || 'Unknown'}
-                </span>
-                <i className={`fa-solid fa-chevron-${expanded ? 'up' : 'down'} text-zinc-600 text-[8px]`} />
-            </button>
-        </div>
-    );
-}
-
-function SceneLightbox({ image, placeName, onClose }) {
-    return (
-        <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm"
-            onClick={onClose}
-        >
-            <div className="relative w-[90vw] h-[70vh]" onClick={e => e.stopPropagation()}>
-                <img
-                    src={image}
-                    alt=""
-                    className="w-full h-full object-cover rounded-lg"
-                />
-                {placeName && (
-                    <p className="absolute bottom-4 left-0 right-0 text-center text-zinc-300 font-sans text-xs uppercase tracking-[0.15em] font-semibold drop-shadow-lg">
-                        {placeName}
-                    </p>
-                )}
-                <button
-                    onClick={onClose}
-                    className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center"
-                >
-                    <i className="fa-solid fa-xmark text-white/70 text-sm" />
-                </button>
-            </div>
-        </div>
-    );
-}
-
-export default function Play({ game, environment }) {
+export default function Play({ game }) {
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
     const [initializing, setInitializing] = useState(false);
-    const [bannerExpanded, setBannerExpanded] = useState(true);
-    const [lightboxOpen, setLightboxOpen] = useState(false);
     const scrollRef = useRef(null);
     const inputRef = useRef(null);
 
     const sceneImage = '/images/environment/church.png';
+    const placeName = game.world?.environment_description || 'Unknown Location';
+    const regionName = game.world?.time || 'Unknown';
 
     useEffect(() => {
         if (game.game_chats && game.game_chats.length > 0) {
@@ -181,68 +80,83 @@ export default function Play({ game, environment }) {
     }
 
     return (
-        <div className="h-screen bg-zinc-950 text-white overflow-hidden flex flex-col relative">
-            {/* Blurred scene background behind chat */}
-            {sceneImage && (
-                <div className="absolute inset-0 z-0">
-                    <img
-                        src={sceneImage}
-                        alt=""
-                        className="w-full h-full object-cover blur-xl scale-110 "
-                    />
-                    <div className="absolute inset-0 bg-zinc-950/70" />
-                </div>
-            )}
-
-            {/* Scene banner */}
-            <div className="relative z-10">
-                <SceneBanner
-                    image={sceneImage}
-                    placeName="The Cathedral"
-                    expanded={bannerExpanded}
-                    onToggle={() => setBannerExpanded(prev => !prev)}
-                    onImageTap={() => setLightboxOpen(true)}
+        <div className="h-screen bg-[#121318] text-[#e3e1e9] font-sans overflow-hidden flex flex-col">
+            {/* Hero Environment Section */}
+            <section className="relative h-[22vh] w-full shrink-0 overflow-hidden">
+                <img
+                    src={sceneImage}
+                    alt={placeName}
+                    className="w-full h-full object-cover brightness-[0.9] contrast-[1.1]"
                 />
-            </div>
+                {/* Vignette overlays */}
+                <div className="absolute inset-0 bg-gradient-to-t from-[#121318] via-transparent to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-b from-[#1c1e29]/90 via-transparent to-transparent" />
 
-            {/* Narration log */}
-            <div
-                ref={scrollRef}
-                className="relative z-10 flex-1 overflow-y-auto px-4 py-8 space-y-8 scroll-smooth"
-            >
-                {initializing && (
-                    <div className="flex items-center justify-center h-full">
-                        <div className="text-center space-y-3">
-                            <i className="fa-solid fa-book-open text-3xl text-zinc-700" />
-                            <p className="text-zinc-500 font-sans text-sm">The story begins...</p>
-                            <LoadingIndicator />
+                {/* Location label */}
+                <div className="absolute bottom-6 left-8">
+                    <span className="font-sans text-[9px] font-bold uppercase tracking-[0.3em] text-[#efc84e]/80 mb-1 block">
+                        Afternoon
+                    </span>
+                    <h1 className="font-narration text-3xl md:text-4xl text-[#e3e1e9] tracking-tight leading-none">
+                        Church
+                    </h1>
+                </div>
+
+                {/* Ambient glow */}
+                <div className="absolute top-1/2 right-12 w-24 h-24 bg-[#efc84e]/10 rounded-full blur-3xl" />
+            </section>
+
+            {/* Narration Window */}
+            <section ref={scrollRef} className="flex-1 overflow-y-auto px-6 md:px-12 py-8">
+                <div className="max-w-2xl w-full mx-auto">
+                    <div className="relative bg-[#0d0e13] p-6 md:p-10 shadow-2xl border-l border-[#efc84e]/5">
+                        {/* Noise texture */}
+                        <div className="elysium-texture absolute inset-0 pointer-events-none" />
+
+                        {/* "Current Episode" divider */}
+                        <div className="flex items-center gap-4 mb-6 opacity-60">
+                            <div className="h-[1px] flex-grow bg-gradient-to-r from-transparent via-[#554434] to-transparent" />
+                            <span className="font-sans text-[9px] font-bold uppercase tracking-widest text-[#a38d7a]">
+                                Current Episode
+                            </span>
+                            <div className="h-[1px] flex-grow bg-gradient-to-r from-transparent via-[#554434] to-transparent" />
                         </div>
-                    </div>
-                )}
 
-                {messages.map((msg, i) => (
-                    <div key={i}>
-                        {msg.type === 'player' ? (
-                            <PlayerMessage text={msg.content} />
-                        ) : (
-                            <LlmMessage content={msg.content} />
-                        )}
-                    </div>
-                ))}
+                        {/* Latest narration only */}
+                        <div className="space-y-5 relative z-10">
+                            {initializing && (
+                                <div className="flex items-center justify-center py-12">
+                                    <div className="text-center space-y-3">
+                                        <i className="fa-solid fa-book-open text-3xl text-[#a38d7a]/50" />
+                                        <p className="text-[#a38d7a] font-sans text-sm">The story begins...</p>
+                                        <LoadingIndicator />
+                                    </div>
+                                </div>
+                            )}
 
-                {loading && (
-                    <div className="max-w-prose mx-auto">
-                        <LoadingIndicator />
-                    </div>
-                )}
-            </div>
+                            {(() => {
+                                const lastLlm = [...messages].reverse().find(m => m.type === 'llm');
+                                if (lastLlm) return <LlmMessage content={lastLlm.content} />;
+                                return null;
+                            })()}
 
-            {/* Input bar */}
-            <form
-                onSubmit={handleSend}
-                className="relative z-10 shrink-0 border-t border-zinc-800 bg-zinc-950/80 backdrop-blur px-4 py-4"
-            >
-                <div className="flex gap-3 max-w-4xl mx-auto">
+                            {loading && (
+                                <div className="py-2">
+                                    <LoadingIndicator />
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Corner decorations */}
+                        <div className="absolute -top-1 -right-1 w-12 h-12 border-t border-r border-[#efc84e]/20 pointer-events-none" />
+                        <div className="absolute -bottom-1 -left-1 w-12 h-12 border-b border-l border-[#efc84e]/20 pointer-events-none" />
+                    </div>
+                </div>
+            </section>
+
+            {/* Input Bar */}
+            <form onSubmit={handleSend} className="shrink-0 px-6 pb-24 pt-4">
+                <div className="flex gap-3 max-w-2xl mx-auto">
                     <input
                         ref={inputRef}
                         type="text"
@@ -250,26 +164,37 @@ export default function Play({ game, environment }) {
                         onChange={(e) => setInput(e.target.value)}
                         placeholder="What do you do?"
                         disabled={loading || initializing}
-                        className="flex-1 bg-zinc-900/80 border border-zinc-800 rounded-xl px-5 py-3 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-red-600/50 focus:ring-1 focus:ring-red-600/30 disabled:opacity-50 font-sans transition-all shadow-inner"
+                        className="flex-1 bg-[#1e1f25] border border-[#554434]/30 rounded-lg px-5 py-3 text-[#e3e1e9] placeholder-[#a38d7a]/50 focus:outline-none focus:border-[#efc84e]/40 focus:ring-1 focus:ring-[#efc84e]/20 disabled:opacity-50 font-sans transition-all"
                     />
                     <button
                         type="submit"
                         disabled={loading || initializing || !input.trim()}
-                        className="px-6 py-3 bg-red-600 hover:bg-red-500 disabled:bg-zinc-800 disabled:text-zinc-600 rounded-xl transition-colors font-sans font-semibold text-white"
+                        className="px-5 py-3 gold-shimmer disabled:opacity-30 rounded-lg transition-all font-sans font-semibold text-[#3c2f00] active:scale-95 shadow-[0_0_15px_rgba(239,200,78,0.2)]"
                     >
                         <i className="fa-solid fa-paper-plane" />
                     </button>
                 </div>
             </form>
 
-            {/* Lightbox */}
-            {lightboxOpen && (
-                <SceneLightbox
-                    image={sceneImage}
-                    placeName="The Cathedral"
-                    onClose={() => setLightboxOpen(false)}
-                />
-            )}
+            {/* Bottom Navigation */}
+            <nav className="fixed bottom-0 w-full z-50 flex justify-around items-center px-4 pb-6 pt-2 bg-[#121318]/90 backdrop-blur-xl border-t border-[#efc84e]/15 shadow-[0_-10px_30px_rgba(0,0,0,0.8)]">
+                <a className="flex flex-col items-center justify-center text-[#efc84e] bg-[#efc84e]/10 rounded-xl py-1 px-4 ring-1 ring-[#efc84e]/30" href="#">
+                    <i className="fa-solid fa-compass mb-1" />
+                    <span className="font-sans text-[10px] font-bold uppercase tracking-widest">Adventure</span>
+                </a>
+                <a className="flex flex-col items-center justify-center text-[#e3e1e9]/60 hover:text-[#e3e1e9] hover:bg-[#34343a] rounded-xl py-1 px-4 transition-all duration-200" href="#">
+                    <i className="fa-solid fa-suitcase mb-1" />
+                    <span className="font-sans text-[10px] font-bold uppercase tracking-widest">Inventory</span>
+                </a>
+                <a className="flex flex-col items-center justify-center text-[#e3e1e9]/60 hover:text-[#e3e1e9] hover:bg-[#34343a] rounded-xl py-1 px-4 transition-all duration-200" href="#">
+                    <i className="fa-solid fa-map mb-1" />
+                    <span className="font-sans text-[10px] font-bold uppercase tracking-widest">World</span>
+                </a>
+                <a className="flex flex-col items-center justify-center text-[#e3e1e9]/60 hover:text-[#e3e1e9] hover:bg-[#34343a] rounded-xl py-1 px-4 transition-all duration-200" href="#">
+                    <i className="fa-solid fa-wand-sparkles mb-1" />
+                    <span className="font-sans text-[10px] font-bold uppercase tracking-widest">Skills</span>
+                </a>
+            </nav>
         </div>
     );
 }
