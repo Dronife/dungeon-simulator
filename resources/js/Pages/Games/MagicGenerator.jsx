@@ -34,6 +34,8 @@ import {
     GiStigmata, GiWingedEmblem, GiCurlingVines, GiScrollUnfurled, GiYinYang,
     GiBookAura, GiLifeInTheBalance, GiTemptation, GiSpatter, GiImprisoned, GiVineFlower, GiVines, GiSplurt,
     GiWhirlpoolShuriken, GiTransfuse, GiFamilyTree, GiInnerSelf,
+    // Scale
+    GiPerson, GiCrosshair, GiTargeted, GiExpand, GiStraightPipe, GiPadlock, GiBlackHoleBolas, GiDuality, GiDramaMasks,
 } from 'react-icons/gi';
 
 const AXES = {
@@ -110,7 +112,7 @@ const SPELL_ICONS = {
     death: {
         projectile: GiChemicalArrow, beam: GiSinusoidalBeam, hand: GiSkeletalHand,
         aura: GiSoulVessel, summon: GiRaiseSkeleton, barrier: GiOni,
-        glyph: GiDeadEye, transformation: GiAnubis, nova: GiChalkOutlineMurder,
+        glyph: GiDeadEye, transformation: GiAnubis, nova: GiBlackHoleBolas,
     },
 };
 
@@ -132,11 +134,20 @@ const SOURCE_ICONS = {
     artifact:   GiScrollUnfurled,
     pact:       GiYinYang,
     study:      GiBookAura,
-    emotion:    GiInnerSelf,
+    emotion:    GiDramaMasks,
     forbidden:  GiImprisoned,
 };
 
-const ROLL_AXES = ['Source', 'Element', 'Manifestation'];
+const SCALE_ICONS = {
+    'self':          GiPerson,
+    'single target': GiCrosshair,
+    'small area':    GiTargeted,
+    'large area':    GiExpand,
+    'line':          GiStraightPipe,
+    'object-bound':  GiPadlock,
+};
+
+const ROLL_AXES = ['Source', 'Element', 'Manifestation', 'Scale'];
 
 function roll() {
     const result = {};
@@ -218,19 +229,24 @@ function MagicCard({ result }) {
                             }}
                         />
                     )}
+
                 </div>
 
-                {/* Divider with element gem */}
+                {/* Divider with scale gem */}
                 <div className="relative h-[1px] shrink-0 z-10" style={{ backgroundColor: `${el.primary}30` }}>
-                    {/* Center gem */}
-                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" title={result.Scale}>
                         <div
-                            className="w-5 h-5 rotate-45 rounded-[2px]"
+                            className="w-7 h-7 rotate-45 rounded-[2px] flex items-center justify-center"
                             style={{
                                 background: `linear-gradient(135deg, ${el.light}, ${el.primary})`,
                                 boxShadow: `0 0 8px ${el.primary}60, inset 0 1px 0 rgba(255,255,255,0.2)`,
                             }}
-                        />
+                        >
+                            {(() => {
+                                const ScaleIcon = SCALE_ICONS[result.Scale];
+                                return ScaleIcon ? <ScaleIcon size={14} color="rgba(0,0,0,0.5)" className="-rotate-45" /> : null;
+                            })()}
+                        </div>
                     </div>
                 </div>
 
