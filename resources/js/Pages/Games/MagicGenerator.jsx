@@ -49,16 +49,16 @@ const AXES = {
 const AXIS_NAMES = Object.keys(AXES);
 
 const ELEMENT_COLORS = {
-    fire:      { from: '#e8552e' },
-    ice:       { from: '#6ec6e6' },
-    light:     { from: '#f0d060' },
-    shadow:    { from: '#8878a8' },
-    earth:     { from: '#c4884a' },
-    wind:      { from: '#a0d8c0' },
-    water:     { from: '#4090d0' },
-    lightning: { from: '#e0cc40' },
-    life:      { from: '#60c060' },
-    death:     { from: '#c060d0' },
+    fire:      { primary: '#b8432e', dark: '#6b1a0e', light: '#e8845a' },
+    ice:       { primary: '#4a8db7', dark: '#1e3a52', light: '#8cc4e0' },
+    light:     { primary: '#c4a85a', dark: '#6b5a28', light: '#e8d8a0' },
+    shadow:    { primary: '#6b4fa0', dark: '#2e1f52', light: '#9b82cc' },
+    earth:     { primary: '#8b6b3e', dark: '#4a3518', light: '#c4a06e' },
+    wind:      { primary: '#6b8b7a', dark: '#2e4a3e', light: '#a0c4b0' },
+    water:     { primary: '#2e6b8b', dark: '#12334a', light: '#5aa0c4' },
+    lightning: { primary: '#c4a032', dark: '#6b5a12', light: '#e8d478' },
+    life:      { primary: '#4a8b3e', dark: '#1e3b18', light: '#7dc06e' },
+    death:     { primary: '#8b3e7a', dark: '#4a1840', light: '#c46eb0' },
 };
 
 const SPELL_ICONS = {
@@ -115,14 +115,14 @@ const SPELL_ICONS = {
 };
 
 const SOURCE_COLORS = {
-    bloodline:  { bg: '#301818', highlight: '#f44b4b' },
-    deity:      { bg: '#302818', highlight: '#ffc402' },
-    nature:     { bg: '#182818', highlight: '#4ff44f' },
-    artifact:   { bg: '#554d41', highlight: '#ecd9b8' },
-    pact:       { bg: '#182828', highlight: '#98c7fd' },
-    study:      { bg: '#272743', highlight: '#4f4ffd' },
-    emotion:    { bg: '#281828', highlight: '#ff52ff' },
-    forbidden:  { bg: '#222224', highlight: '#681eff' },
+    bloodline:  '#8b3030',
+    deity:      '#c4a860',
+    nature:     '#4a7a3e',
+    artifact:   '#7a6a4a',
+    pact:       '#6b3060',
+    study:      '#5a4a8b',
+    emotion:    '#4a6b7a',
+    forbidden:  '#3a1a1a',
 };
 
 const SOURCE_ICONS = {
@@ -150,38 +150,125 @@ function roll() {
 function MagicCard({ result }) {
     if (!result) return null;
 
-    const source = SOURCE_COLORS[result.Source] || { bg: '#1a1a1a', highlight: '#3a3a3a' };
-    const iconColor = ELEMENT_COLORS[result.Element]?.from || '#ffffff';
+    const el = ELEMENT_COLORS[result.Element] || { primary: '#666', dark: '#333', light: '#999' };
+    const sourceColor = SOURCE_COLORS[result.Source] || '#3a3a3a';
     const Icon = SPELL_ICONS[result.Element]?.[result.Manifestation];
     const SourceIcon = SOURCE_ICONS[result.Source];
-    const stroke = `drop-shadow(2px 0 0 ${source.highlight}) drop-shadow(-2px 0 0 ${source.highlight}) drop-shadow(0 2px 0 ${source.highlight}) drop-shadow(0 -2px 0 ${source.highlight})`;
 
     return (
-        <div className="w-full max-w-[240px] mx-auto aspect-[4/5] border border-[#efc84e]/30 rounded-lg p-4 flex flex-col relative overflow-hidden transition-all duration-500 bg-[#0d0e13]">
-            {/* Texture */}
-            <div className="elysium-texture absolute inset-0 pointer-events-none" />
+        /* Outer card — drop shadow for floating effect */
+        <div
+            className="w-full max-w-[240px] mx-auto aspect-[4/5] rounded-lg relative overflow-hidden transition-all duration-500"
+            style={{
+                boxShadow: `0 4px 24px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.3), 0 0 40px ${el.dark}40`,
+            }}
+        >
+            {/* Frame — element gradient border */}
+            <div
+                className="absolute inset-0 rounded-lg"
+                style={{ background: `linear-gradient(180deg, ${el.primary}, ${el.dark})` }}
+            />
 
-            {/* Source icon as faint background */}
-            {SourceIcon && (
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <SourceIcon size={500} color={source.bg} />
+            {/* Metallic sheen on frame */}
+            <div
+                className="absolute inset-0 rounded-lg pointer-events-none"
+                style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 50%, rgba(255,255,255,0.03) 100%)' }}
+            />
+
+            {/* Grain texture on frame */}
+            <div className="elysium-texture absolute inset-0 rounded-lg pointer-events-none" />
+
+            {/* Inner card — dark recessed area */}
+            <div className="absolute inset-[6px] rounded flex flex-col overflow-hidden bg-[#0e0e12]">
+
+                {/* Art well — top 62% */}
+                <div
+                    className="relative flex-[62] flex items-center justify-center"
+                    style={{
+                        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.07), inset 0 -1px 0 rgba(0,0,0,0.3), inset 0 0 20px rgba(0,0,0,0.4)',
+                    }}
+                >
+                    {/* Vignette */}
+                    <div
+                        className="absolute inset-0 pointer-events-none"
+                        style={{ background: 'radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.5) 100%)' }}
+                    />
+
+                    {/* Element glow behind icon */}
+                    <div
+                        className="absolute inset-0 pointer-events-none"
+                        style={{ background: `radial-gradient(ellipse at center, ${el.primary}15 0%, transparent 60%)` }}
+                    />
+
+                    {/* Source watermark */}
+                    {SourceIcon && (
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.04]">
+                            <SourceIcon size={200} color="#ffffff" />
+                        </div>
+                    )}
+
+                    {/* Main spell icon */}
+                    {Icon && (
+                        <Icon
+                            size={100}
+                            color={el.light}
+                            className="relative z-10"
+                            style={{
+                                filter: `drop-shadow(0 0 12px ${el.primary}60) drop-shadow(0 0 4px ${el.primary}40)`,
+                            }}
+                        />
+                    )}
                 </div>
-            )}
 
-            {/* Top accent line */}
-            <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-[#efc84e]/40 to-transparent mb-3" />
+                {/* Divider with element gem */}
+                <div className="relative h-[1px] shrink-0 z-10" style={{ backgroundColor: `${el.primary}30` }}>
+                    {/* Center gem */}
+                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+                        <div
+                            className="w-5 h-5 rotate-45 rounded-[2px]"
+                            style={{
+                                background: `linear-gradient(135deg, ${el.light}, ${el.primary})`,
+                                boxShadow: `0 0 8px ${el.primary}60, inset 0 1px 0 rgba(255,255,255,0.2)`,
+                            }}
+                        />
+                    </div>
+                </div>
 
-            {/* Card content */}
-            <div className="flex-1 flex flex-col items-center justify-center relative z-10 ">
-                {Icon ? <Icon size={200} color={iconColor} style={{ filter: stroke }} /> : null}
+                {/* Text plate — bottom 38% */}
+                <div
+                    className="relative flex-[38] flex flex-col items-center justify-center px-4 py-3 bg-[#141418]"
+                    style={{
+                        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
+                    }}
+                >
+                    {/* Manifestation label */}
+                    <p className="font-sans text-[11px] font-bold uppercase tracking-[0.15em] text-[#e3e1e9]/90 mb-2">
+                        {result.Manifestation}
+                    </p>
+
+                    {/* Element badge */}
+                    <span
+                        className="px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest mb-1.5"
+                        style={{
+                            backgroundColor: `${el.primary}20`,
+                            color: el.light,
+                        }}
+                    >
+                        {result.Element}
+                    </span>
+
+                    {/* Source badge */}
+                    <span
+                        className="px-2 py-0.5 rounded-full text-[8px] uppercase tracking-wider"
+                        style={{
+                            backgroundColor: `${sourceColor}20`,
+                            color: `${sourceColor}cc`,
+                        }}
+                    >
+                        {result.Source}
+                    </span>
+                </div>
             </div>
-
-            {/* Bottom accent line */}
-            <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-[#efc84e]/40 to-transparent mt-3" />
-
-            {/* Corner decorations */}
-            <div className="absolute top-1 right-1 w-6 h-6 border-t border-r border-[#efc84e]/20 pointer-events-none" />
-            <div className="absolute bottom-1 left-1 w-6 h-6 border-b border-l border-[#efc84e]/20 pointer-events-none" />
         </div>
     );
 }
