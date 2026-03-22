@@ -202,7 +202,7 @@ function MagicCard({ result }) {
 
                     {/* Source watermark */}
                     {SourceIcon && (
-                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.04]">
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.1]">
                             <SourceIcon size={200} color="#ffffff" />
                         </div>
                     )}
