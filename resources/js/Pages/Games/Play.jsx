@@ -9,7 +9,7 @@ export default function Play({ game }) {
     const scrollRef = useRef(null);
     const inputRef = useRef(null);
 
-    const sceneImage = '/images/environment/church.png';
+    const sceneImage = '/images/environment/tavern.png';
     const placeName = game.world?.environment_description || 'Unknown Location';
     const regionName = game.world?.time || 'Unknown';
 
@@ -86,7 +86,7 @@ export default function Play({ game }) {
                 <img
                     src={sceneImage}
                     alt={placeName}
-                    className="w-full h-full object-cover brightness-[0.9] contrast-[1.1]"
+                    className="w-full h-full object-cover brightness-[0.7] contrast-[1.1]"
                 />
                 {/* Vignette overlays */}
                 <div className="absolute inset-0 bg-gradient-to-t from-[#121318] via-transparent to-transparent" />
@@ -95,10 +95,10 @@ export default function Play({ game }) {
                 {/* Location label */}
                 <div className="absolute bottom-6 left-8">
                     <span className="font-sans text-[9px] font-bold uppercase tracking-[0.3em] text-[#efc84e]/80 mb-1 block">
-                        Afternoon
+                        Morning
                     </span>
                     <h1 className="font-narration text-3xl md:text-4xl text-[#e3e1e9] tracking-tight leading-none">
-                        Church
+                        Tavern
                     </h1>
                 </div>
 
