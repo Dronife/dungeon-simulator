@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/test', fn() => Inertia::render('Test'));
+Route::get('/generate/magic', fn() => Inertia::render('Games/MagicGenerator'));
 
 
 Route::get('/testllm', [\App\Http\Controllers\TestController::class, 'test']);
