@@ -43,13 +43,18 @@ const AXES = {
     Source: ['bloodline', 'deity', 'nature', 'artifact', 'pact', 'study', 'emotion', 'forbidden'],
     Element: ['fire', 'ice', 'light', 'shadow', 'earth', 'wind', 'water', 'lightning', 'life', 'death'],
     Manifestation: ['projectile', 'beam', 'hand', 'aura', 'summon', 'barrier', 'glyph', 'transformation', 'nova'],
-    // Cost: ['health', 'memory', 'emotion', 'time', 'lifespan', 'sanity', 'bond'],
-    // Trigger: ['verbal', 'gesture', 'ritual', 'thought', 'rune', 'eye contact', 'proximity'],
-    // Behavior: ['instant', 'lingering', 'growing', 'chain-reaction', 'delayed', 'channeled', 'infectious', 'fading'],
     Scale: ['self', 'single target', 'small area', 'large area'],
 };
 
+const BEHAVIOUR = {
+    Verb: ['protect', 'destroy', 'create', 'bind', 'reveal', 'conceal', 'drain', 'heal', 'enhance', 'suppress', 'redirect', 'push', 'pull', 'slow', 'hasten', 'transform', 'amplify', 'sever'],
+    'Target State': ['health', 'movement', 'perception', 'strength', 'form', 'mind', 'visibility', 'durability', 'size', 'weight', 'temperature', 'mana'],
+    Duration: ['instant', 'sustained', 'decaying', 'delayed', 'pulsing', 'permanent'],
+    Condition: ['on-hit', 'on-proximity', 'on-death', 'on-damage', 'on-cast', 'on-contact', 'timed', 'concentration'],
+};
+
 const AXIS_NAMES = Object.keys(AXES);
+const BEHAVIOUR_NAMES = Object.keys(BEHAVIOUR);
 
 const ELEMENT_COLORS = {
     fire:      { primary: '#b8432e', dark: '#6b1a0e', light: '#e8845a' },
@@ -152,6 +157,10 @@ function roll() {
     const result = {};
     for (const axis of ROLL_AXES) {
         const options = AXES[axis];
+        result[axis] = options[Math.floor(Math.random() * options.length)];
+    }
+    for (const axis of BEHAVIOUR_NAMES) {
+        const options = BEHAVIOUR[axis];
         result[axis] = options[Math.floor(Math.random() * options.length)];
     }
     return result;
@@ -391,6 +400,35 @@ export default function MagicGenerator() {
                     })}
                 </div>
 
+                <div className="space-y-4 mb-10">
+                    {BEHAVIOUR_NAMES.map(axis => {
+                        const active = result && axis in result;
+                        return (
+                            <div key={axis} className={active ? 'opacity-100' : 'opacity-30'}>
+                                <p className="font-sans text-[10px] font-bold uppercase tracking-widest text-[#e07a4e] mb-1.5">
+                                    {axis}
+                                </p>
+                                <div className="flex flex-wrap gap-1.5">
+                                    {BEHAVIOUR[axis].map(item => {
+                                        const selected = active && result[axis] === item;
+                                        return (
+                                            <span
+                                                key={item}
+                                                className={`px-2.5 py-1 rounded text-xs font-sans ${
+                                                    selected
+                                                        ? 'bg-[#e07a4e] text-[#3c1800] font-bold'
+                                                        : 'bg-[#1e1f25] text-[#a38d7a]'
+                                                }`}
+                                            >
+                                                {item}
+                                            </span>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
 
             </div>
         </div>
