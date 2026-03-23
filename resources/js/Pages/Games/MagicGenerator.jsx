@@ -35,7 +35,8 @@ import {
     GiBookAura, GiLifeInTheBalance, GiTemptation, GiSpatter, GiImprisoned, GiVineFlower, GiVines, GiSplurt,
     GiWhirlpoolShuriken, GiTransfuse, GiFamilyTree, GiInnerSelf,
     // Scale
-    GiPerson, GiCrosshair, GiTargeted, GiExpand, GiBlackHoleBolas, GiDuality, GiDramaMasks,
+    GiPerson, GiCrosshair, GiTargeted, GiExpand, GiBlackHoleBolas, GiDuality, GiDramaMasks, GiShakingHands,
+    GiRelationshipBounds, GiMinions, GiBookCover, GiFireDash, GiVitruvianMan,
 } from 'react-icons/gi';
 
 const AXES = {
@@ -107,7 +108,7 @@ const SPELL_ICONS = {
     life: {
         projectile: GiStarSattelites, beam: GiDoubleRingedOrb, hand: GiCherish,
         aura: GiMagicSwirl, summon: GiHealing, barrier: GiBarbedCoil,
-        glyph: GiVortex, transformation: null, nova: GiProcessor,
+        glyph: GiVortex, transformation: GiFireDash, nova: GiProcessor,
     },
     death: {
         projectile: GiChemicalArrow, beam: GiSinusoidalBeam, hand: GiSkeletalHand,
@@ -117,23 +118,23 @@ const SPELL_ICONS = {
 };
 
 const SOURCE_COLORS = {
-    bloodline:  '#8b3030',
-    deity:      '#c4a860',
-    nature:     '#4a7a3e',
-    artifact:   '#7a6a4a',
-    pact:       '#6b3060',
-    study:      '#5a4a8b',
-    emotion:    '#4a6b7a',
-    forbidden:  '#3a1a1a',
+    bloodline:  '#c45050',
+    deity:      '#e8cc80',
+    nature:     '#70b858',
+    artifact:   '#b89868',
+    pact:       '#a85890',
+    study:      '#8a70c0',
+    emotion:    '#70a0b8',
+    forbidden:  '#a04040',
 };
 
 const SOURCE_ICONS = {
-    bloodline:  GiFamilyTree,
+    bloodline:  GiMinions,
     deity:      GiWingedEmblem,
-    nature:     GiVines,
+    nature:     GiVitruvianMan,
     artifact:   GiScrollUnfurled,
-    pact:       GiYinYang,
-    study:      GiBookAura,
+    pact:       GiRelationshipBounds,
+    study:      GiBookCover,
     emotion:    GiDramaMasks,
     forbidden:  GiImprisoned,
 };
@@ -211,8 +212,9 @@ function MagicCard({ result }) {
 
                     {/* Source watermark */}
                     {SourceIcon && (
-                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.1]">
-                            <SourceIcon size={200} color="#ffffff" />
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.15]">
+                            <SourceIcon size={200} color={sourceColor} />
+                            {/*#ffffff*/}
                         </div>
                     )}
 
@@ -320,8 +322,8 @@ function MagicCard({ result }) {
                     <span
                         className="px-2 py-0.5 rounded-full text-[8px] uppercase tracking-wider"
                         style={{
-                            backgroundColor: `${sourceColor}20`,
-                            color: `${sourceColor}cc`,
+                            backgroundColor: `${sourceColor}40`,
+                            color: `${sourceColor}`,
                         }}
                     >
                         {result.Source}
