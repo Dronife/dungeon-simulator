@@ -1,3 +1,5 @@
+import { Link } from '@inertiajs/react';
+
 const NAV_ITEMS = [
     { key: 'adventure', icon: 'fa-compass', label: 'Adventure', href: (gameId) => `/game/${gameId}/play` },
     { key: 'inventory', icon: 'fa-suitcase', label: 'Inventory', href: (gameId) => `/game/${gameId}/inventory` },
@@ -13,25 +15,25 @@ export default function BottomNav({ active, gameId }) {
 
                 if (isActive) {
                     return (
-                        <a
+                        <Link
                             key={item.key}
                             href={item.href(gameId)}
                             className="flex flex-col items-center justify-center text-[#efc84e] bg-[#efc84e]/10 rounded-xl py-1 px-4 ring-1 ring-[#efc84e]/30"
                         >
                             <i className={`fa-solid ${item.icon} mb-1`} />
                             <span className="font-sans text-[10px] font-bold uppercase tracking-widest">{item.label}</span>
-                        </a>
+                        </Link>
                     );
                 }
 
                 return (
-                    <a
+                    <Link
                         key={item.key}
                         href={item.href(gameId)}
                         className="flex items-center justify-center text-[#e3e1e9]/60 hover:text-[#e3e1e9] hover:bg-[#34343a] rounded-xl w-10 h-10 transition-all duration-200"
                     >
                         <i className={`fa-solid ${item.icon}`} />
-                    </a>
+                    </Link>
                 );
             })}
         </nav>
