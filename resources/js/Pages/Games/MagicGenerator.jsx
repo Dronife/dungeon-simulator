@@ -37,6 +37,8 @@ import {
     // Scale
     GiPerson, GiCrosshair, GiTargeted, GiExpand, GiBlackHoleBolas, GiDuality, GiDramaMasks, GiShakingHands,
     GiRelationshipBounds, GiMinions, GiBookCover, GiFireDash, GiVitruvianMan,
+    // Verb families
+    GiPlainDagger, GiVibratingShield, GiCrossedChains, GiOctogonalEye, GiPolarStar, GiBreakingChain, GiSnowman,
 } from 'react-icons/gi';
 
 const AXES = {
@@ -78,7 +80,7 @@ const SPELL_ICONS = {
     ice: {
         projectile: GiIceSpear, beam: GiBeamWake, hand: GiIceSpellCast,
         aura: GiIciclesAura, summon: GiIceGolem, barrier: GiIceShield,
-        glyph: GiIciclesFence, transformation: null, nova: GiSpikyExplosion,
+        glyph: GiIciclesFence, transformation: GiSnowman, nova: GiSpikyExplosion,
     },
     light: {
         projectile: GiHypersonicBolt, beam: GiLaserburn, hand: GiGlowingHands,
@@ -151,6 +153,22 @@ const SCALE_ICONS = {
     'large area':    GiExpand,
 };
 
+const VERB_FAMILIES = {
+    destroy:   'destruction', drain:    'destruction', sever:     'destruction',
+    protect:   'protection',  heal:     'protection',  enhance:   'protection',
+    bind:      'control',     suppress: 'control',     slow:      'control',     pull: 'control', push: 'control',
+    reveal:    'arcane',      conceal:  'arcane',      redirect:  'arcane',      transform: 'arcane',
+    create:    'creation',    amplify:  'creation',    hasten:    'creation',
+};
+
+const VERB_FAMILY_ICONS = {
+    destruction: GiPlainDagger,
+    protection:  GiVibratingShield,
+    control:     GiBreakingChain,
+    arcane:      GiOctogonalEye,
+    creation:    GiPolarStar,
+};
+
 const ROLL_AXES = ['Source', 'Element', 'Manifestation', 'Scale'];
 
 function roll() {
@@ -173,6 +191,27 @@ function MagicCard({ result }) {
     const sourceColor = SOURCE_COLORS[result.Source] || '#3a3a3a';
     const Icon = SPELL_ICONS[result.Element]?.[result.Manifestation];
     const SourceIcon = SOURCE_ICONS[result.Source];
+    const verbFamily = VERB_FAMILIES[result.Verb];
+    const VerbIcon = VERB_FAMILY_ICONS[verbFamily];
+    const verbSize = 25;
+    console.log(SourceIcon.name);
+    const rotationMap = {
+        GiPlainDagger: {
+            topLeft: 0,
+            topRight: 90,
+            bottomLeft: -90,
+            bottomRight: -180,
+        },
+        GiBreakingChain: {
+            topLeft: 0,
+            topRight: 90,
+            bottomLeft: -90,
+            bottomRight: -180,
+        },
+    };
+    const defaultRotation = { topLeft: 0, topRight: 0, bottomLeft: -180, bottomRight: -180 };
+    const iconName = VerbIcon?.name || '';
+    const rot = rotationMap[iconName] || defaultRotation;
 
     return (
         /* Outer card — drop shadow for floating effect */
@@ -196,6 +235,41 @@ function MagicCard({ result }) {
 
             {/* Grain texture on frame */}
             <div className="elysium-texture absolute inset-0 rounded-lg pointer-events-none" />
+
+            {/* Verb family corner icons — rotated toward center */}
+            {VerbIcon && (
+                <>
+                    <div className="absolute top-2 left-2 z-10 pointer-events-none" style={{ opacity: 0.8 }}>
+                        <VerbIcon size={verbSize} color={el.light} style={{ transform: `rotate(${rot.topLeft}deg)` }} />
+                    </div>
+                    <div className="absolute top-2 right-2 z-10 pointer-events-none" style={{ opacity: 0.8 }}>
+                        <VerbIcon size={verbSize} color={el.light} style={{ transform: `rotate(${rot.topRight}deg)` }} />
+                    </div>
+                    <div className="absolute bottom-2 left-2 z-10 pointer-events-none" style={{ opacity: 0.8 }}>
+                        <VerbIcon size={verbSize} color={el.light} style={{ transform: `rotate(${rot.bottomLeft}deg)` }} />
+                    </div>
+                    <div className="absolute bottom-2 right-2 z-10 pointer-events-none" style={{ opacity: 0.8 }}>
+                        <VerbIcon size={verbSize} color={el.light} style={{ transform: `rotate(${rot.bottomRight}deg)` }} />
+                    </div>
+                </>
+            )}
+
+            {/* Verb nameplate — bottom center of frame */}
+            {result.Verb && (
+                <div className="absolute bottom-0 left-0 right-0 z-10 flex justify-center pointer-events-none">
+                    <span
+                        className="px-2.5 py-[1px] text-[10px] font-bold uppercase tracking-[0.2em] rounded-t-sm"
+                        style={{
+                            backgroundColor: el.dark,
+                            color: el.light,
+                            border: `1px solid ${el.primary}40`,
+                            borderBottom: 'none',
+                        }}
+                    >
+                        {result.Verb}
+                    </span>
+                </div>
+            )}
 
             {/* Inner card — dark recessed area */}
             <div className="absolute inset-[6px] rounded flex flex-col overflow-hidden bg-[#0e0e12]">
@@ -316,27 +390,29 @@ function MagicCard({ result }) {
                         {result.Manifestation}
                     </p>
 
-                    {/* Element badge */}
-                    <span
-                        className="px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest mb-1.5"
-                        style={{
-                            backgroundColor: `${el.primary}20`,
-                            color: el.light,
-                        }}
-                    >
+                    <div className="row gap-5">
+                        {/* Element badge */}
+                        <span
+                            className="px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest mb-1.5"
+                            style={{
+                                backgroundColor: `${el.primary}20`,
+                                color: el.light,
+                            }}
+                        >
                         {result.Element}
                     </span>
 
-                    {/* Source badge */}
-                    <span
-                        className="px-2 py-0.5 rounded-full text-[8px] uppercase tracking-wider"
-                        style={{
-                            backgroundColor: `${sourceColor}40`,
-                            color: `${sourceColor}`,
-                        }}
-                    >
+                        {/* Source badge */}
+                        <span
+                            className="px-2 py-0.5 rounded-full text-[8px] uppercase tracking-wider"
+                            style={{
+                                backgroundColor: `${sourceColor}40`,
+                                color: `${sourceColor}`,
+                            }}
+                        >
                         {result.Source}
                     </span>
+                    </div>
                 </div>
             </div>
         </div>
