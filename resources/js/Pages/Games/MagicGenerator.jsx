@@ -35,7 +35,7 @@ import {
     GiBookAura, GiLifeInTheBalance, GiTemptation, GiSpatter, GiImprisoned, GiVineFlower, GiVines, GiSplurt,
     GiWhirlpoolShuriken, GiTransfuse, GiFamilyTree, GiInnerSelf,
     // Scale
-    GiPerson, GiCrosshair, GiTargeted, GiExpand, GiStraightPipe, GiPadlock, GiBlackHoleBolas, GiDuality, GiDramaMasks,
+    GiPerson, GiCrosshair, GiTargeted, GiExpand, GiBlackHoleBolas, GiDuality, GiDramaMasks,
 } from 'react-icons/gi';
 
 const AXES = {
@@ -45,7 +45,7 @@ const AXES = {
     // Cost: ['health', 'memory', 'emotion', 'time', 'lifespan', 'sanity', 'bond'],
     // Trigger: ['verbal', 'gesture', 'ritual', 'thought', 'rune', 'eye contact', 'proximity'],
     // Behavior: ['instant', 'lingering', 'growing', 'chain-reaction', 'delayed', 'channeled', 'infectious', 'fading'],
-    Scale: ['self', 'single target', 'small area', 'large area', 'line', 'object-bound'],
+    Scale: ['self', 'single target', 'small area', 'large area'],
 };
 
 const AXIS_NAMES = Object.keys(AXES);
@@ -143,8 +143,6 @@ const SCALE_ICONS = {
     'single target': GiCrosshair,
     'small area':    GiTargeted,
     'large area':    GiExpand,
-    'line':          GiStraightPipe,
-    'object-bound':  GiPadlock,
 };
 
 const ROLL_AXES = ['Source', 'Element', 'Manifestation', 'Scale'];
@@ -232,23 +230,68 @@ function MagicCard({ result }) {
 
                 </div>
 
-                {/* Divider with scale gem */}
-                <div className="relative h-[1px] shrink-0 z-10" style={{ backgroundColor: `${el.primary}30` }}>
-                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" title={result.Scale}>
+                {/* Divider with scale gems */}
+                {(() => {
+                    const scale = result.Scale;
+                    const ScaleIcon = SCALE_ICONS[scale];
+                    const centerFilled = scale !== 'self';
+                    // self=0, single target=0, small area=1, large area=3
+                    const sideGems = scale === 'small area' ? 1 : scale === 'large area' ? 3 : 0;
+                    const totalSide = 3;
+
+                    const SmallGem = ({ filled }) => (
                         <div
-                            className="w-7 h-7 rotate-45 rounded-[2px] flex items-center justify-center"
+                            className="w-2.5 h-2.5 rotate-45 rounded-[1px]"
                             style={{
-                                background: `linear-gradient(135deg, ${el.light}, ${el.primary})`,
-                                boxShadow: `0 0 8px ${el.primary}60, inset 0 1px 0 rgba(255,255,255,0.2)`,
+                                background: filled
+                                    ? `linear-gradient(135deg, ${el.light}, ${el.primary})`
+                                    : `${el.primary}15`,
+                                boxShadow: filled ? `0 0 4px ${el.primary}40` : 'none',
+                                border: filled ? 'none' : `1px solid ${el.primary}25`,
                             }}
-                        >
-                            {(() => {
-                                const ScaleIcon = SCALE_ICONS[result.Scale];
-                                return ScaleIcon ? <ScaleIcon size={14} color="rgba(0,0,0,0.5)" className="-rotate-45" /> : null;
-                            })()}
+                        />
+                    );
+
+                    return (
+                        <div className="relative h-[1px] shrink-0 z-10" style={{ backgroundColor: `${el.primary}30` }}>
+                            <div className="absolute inset-0 flex items-center justify-center gap-2">
+                                {/* Left gems */}
+                                {Array.from({ length: totalSide }).map((_, i) => (
+                                    <SmallGem key={`l${i}`} filled={i >= totalSide - sideGems} />
+                                ))}
+
+                                {/* Center icon gem */}
+                                <div title={scale}>
+                                    <div
+                                        className="w-7 h-7 rotate-45 rounded-[2px] flex items-center justify-center"
+                                        style={{
+                                            background: centerFilled
+                                                ? `linear-gradient(135deg, ${el.light}, ${el.primary})`
+                                                : 'transparent',
+                                            boxShadow: centerFilled
+                                                ? `0 0 8px ${el.primary}60, inset 0 1px 0 rgba(255,255,255,0.2)`
+                                                : 'none',
+                                            border: centerFilled ? 'none' : `1.5px solid ${el.primary}`,
+                                        }}
+                                    >
+                                        {ScaleIcon ? (
+                                            <ScaleIcon
+                                                size={14}
+                                                color={centerFilled ? 'rgba(0,0,0,0.5)' : el.light}
+                                                className="-rotate-45"
+                                            />
+                                        ) : null}
+                                    </div>
+                                </div>
+
+                                {/* Right gems — mirrors left */}
+                                {Array.from({ length: totalSide }).map((_, i) => (
+                                    <SmallGem key={`r${i}`} filled={i < sideGems} />
+                                ))}
+                            </div>
                         </div>
-                    </div>
-                </div>
+                    );
+                })()}
 
                 {/* Text plate — bottom 38% */}
                 <div
