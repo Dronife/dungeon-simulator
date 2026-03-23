@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { LlmMessage, LoadingIndicator } from './NarrationLines';
+import BottomNav from './BottomNav';
 
 export default function Play({ game }) {
     const [messages, setMessages] = useState([]);
@@ -177,24 +178,7 @@ export default function Play({ game }) {
             </form>
 
             {/* Bottom Navigation */}
-            <nav className="fixed bottom-0 w-full z-50 flex justify-around items-center px-4 pb-6 pt-2 bg-[#121318]/90 backdrop-blur-xl border-t border-[#efc84e]/15 shadow-[0_-10px_30px_rgba(0,0,0,0.8)]">
-                <a className="flex flex-col items-center justify-center text-[#efc84e] bg-[#efc84e]/10 rounded-xl py-1 px-4 ring-1 ring-[#efc84e]/30" href="#">
-                    <i className="fa-solid fa-compass mb-1" />
-                    <span className="font-sans text-[10px] font-bold uppercase tracking-widest">Adventure</span>
-                </a>
-                <a className="flex flex-col items-center justify-center text-[#e3e1e9]/60 hover:text-[#e3e1e9] hover:bg-[#34343a] rounded-xl py-1 px-4 transition-all duration-200" href="#">
-                    <i className="fa-solid fa-suitcase mb-1" />
-                    <span className="font-sans text-[10px] font-bold uppercase tracking-widest">Inventory</span>
-                </a>
-                <a className="flex flex-col items-center justify-center text-[#e3e1e9]/60 hover:text-[#e3e1e9] hover:bg-[#34343a] rounded-xl py-1 px-4 transition-all duration-200" href="#">
-                    <i className="fa-solid fa-map mb-1" />
-                    <span className="font-sans text-[10px] font-bold uppercase tracking-widest">World</span>
-                </a>
-                <a className="flex flex-col items-center justify-center text-[#e3e1e9]/60 hover:text-[#e3e1e9] hover:bg-[#34343a] rounded-xl py-1 px-4 transition-all duration-200" href="#">
-                    <i className="fa-solid fa-wand-sparkles mb-1" />
-                    <span className="font-sans text-[10px] font-bold uppercase tracking-widest">Skills</span>
-                </a>
-            </nav>
+            <BottomNav active="adventure" gameId={game.id} />
         </div>
     );
 }
