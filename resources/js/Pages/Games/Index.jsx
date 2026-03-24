@@ -36,7 +36,6 @@ export default function Index({ games }) {
                     <h2 className="font-sans text-[9px] font-bold uppercase tracking-[0.3em] text-[#a38d7a] mb-4">
                         Your Games
                     </h2>
-
                     {games.length === 0 ? (
                         <div className="text-center py-12">
                             <i className="fa-solid fa-book-open text-3xl text-[#554434]/30 mb-3 block" />
