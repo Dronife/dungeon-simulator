@@ -18,6 +18,7 @@ Route::get('/', fn() => redirect()->route('game.index'));
 // Games
 Route::get('/game', [GameController::class, 'index'])->name('game.index');
 Route::post('/game', [GameController::class, 'store'])->name('game.store');
+Route::get('/game/create', fn() => Inertia::render('Games/Create'))->name('game.create');
 Route::get('/game/generate', [GameController::class, 'generate'])->name('game.generate');
 Route::get('/game/world-generate', [GameController::class, 'generateWorld'])->name('game.world-generate');
 Route::get('/game/world-images/{cacheKey}', [GameController::class, 'worldImages'])->name('game.world-images');
