@@ -10,7 +10,7 @@ export default function Play({ game }) {
     const scrollRef = useRef(null);
     const inputRef = useRef(null);
 
-    const sceneImage = '/images/environment/tavern.png';
+    const sceneImage = '/images/environment/forest.png';
     const placeName = game.world?.environment_description || 'Unknown Location';
     const regionName = game.world?.time || 'Unknown';
 
@@ -96,10 +96,10 @@ export default function Play({ game }) {
                 {/* Location label */}
                 <div className="absolute bottom-6 left-8">
                     <span className="font-sans text-[9px] font-bold uppercase tracking-[0.3em] text-[#efc84e]/80 mb-1 block">
-                        Morning
+                        Afternoon
                     </span>
                     <h1 className="font-narration text-3xl md:text-4xl text-[#e3e1e9] tracking-tight leading-none">
-                        Tavern
+                        Forest
                     </h1>
                 </div>
 
