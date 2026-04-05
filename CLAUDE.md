@@ -33,9 +33,34 @@ PLAYING: Player types action → DM responds with structured screenplay-style sc
 ### TODO / Future Plans
 - Implement async character creation (parallel generation)
 
+### Memory System
+- Four-tier memory: **tick** (single beats) → **recap** (compressed ticks) → **summary** (compressed recaps) → **epoch** (life chapters/backstory)
+- Memories have `active` flag — only active memories are loaded into context by default
+- `parent_id` on memories for tracking compression chains
+- Memory model: `Memory` ↔ `CharacterMemory` (pivot) ↔ `Character` (BelongsToMany)
+
+### NPC Intent System
+- Each NPC gets their own LLM call to declare intent (what they *want* to do next)
+- NPC context includes: full bio, identity, speech patterns, all memory tiers, relationship map to nearby characters
+- NPC states intent in first person; if speaking, includes exact dialogue in quotes
+- NPCs never narrate outcomes — they only declare what they attempt
+
+### Character Relationships
+- `CharacterRelationship` model with 8 float axes: trust, affection, respect, fear, loyalty, debt, rivalry, attraction
+- `CharacterRelationshipMap` connects from_character → to_character (directional — each side has separate feelings)
+- `$character->relationshipWith($target)` returns the relationship or null
+- `$character->createRelationshipWith($target, $axes)` for creation
+
+### DM / Narration
+- DM is a narrator only — does not need NPC memories, secrets, or internal state
+- DM receives: NPC bios, speech patterns, physical appearance, and their declared intents
+- DM produces structured screenplay-style JSON (heading, narrator, dialogue, action, mechanic, etc.)
+- Pre-rolled d20 dice passed to DM; DM uses them for checks (persuasion, deception, stealth, etc.)
+- Tested with Gemini Flash Lite — ~$0.0001 per NPC call, ~0.7-1.3s response time
+
 ### LLM Context Structure
-- **Character context:** personality, traits, goals, secrets, items, skills + tiered memory (Summary → Recap → Ticks)
-- **DM context:** global rules + own tiered memory
+- **NPC context:** bio, identity, speech patterns, all memory tiers, relationship map to nearby characters
+- **DM context:** NPC public info (bio, speech, appearance) + NPC intents + pre-rolled dice. No memories, no secrets.
 - **Two-tier secrets:** `public_secrets` (discoverable) vs `secrets` (internal motives)
 - Memory compresses periodically (oldest ticks → recap → summary)
 
