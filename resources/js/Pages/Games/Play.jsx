@@ -10,7 +10,7 @@ export default function Play({ game }) {
     const scrollRef = useRef(null);
     const inputRef = useRef(null);
 
-    const sceneImage = '/images/environment/forest.png';
+    const sceneImage = '/images/environment/test4.png';
     const placeName = game.world?.environment_description || 'Unknown Location';
     const regionName = game.world?.time || 'Unknown';
 
