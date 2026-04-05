@@ -11,7 +11,8 @@ Route::get('/test', fn() => Inertia::render('Test'));
 Route::get('/generate/magic', fn() => Inertia::render('Games/MagicGenerator'));
 
 
-Route::get('/testllm', [\App\Http\Controllers\TestController::class, 'test']);
+Route::get('/testllm', [\App\Http\Controllers\Research\TestController::class, 'test']);
+Route::get('/test-memory', [\App\Http\Controllers\Research\MemoryTestController::class, 'testMemory']);
 
 Route::get('/', fn() => redirect()->route('game.index'));
 

@@ -10,6 +10,12 @@ class Memory extends Model
     protected $fillable = [
         'memory',
         'type',
+        'parent_id',
+        'active',
+    ];
+
+    protected $casts = [
+        'active' => 'boolean',
     ];
 
     public function characterMemories(): HasMany

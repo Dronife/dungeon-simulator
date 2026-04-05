@@ -15,6 +15,7 @@ use Gemini\Laravel\Facades\Gemini;
 class GeminiClient
 {
     public const MODEL_31_FLASH_LITE = 'gemini-3.1-flash-lite-preview';
+    public const MODEL_25_FLASH = 'gemini-2.5-flash';
     public const MODEL_25_FLASH_LITE = 'gemini-2.5-flash-lite';
     public const MODEL_FLASH = 'gemini-3-flash-preview';
     public const MODEL_PRO = 'gemini-3-pro-preview';

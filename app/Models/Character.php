@@ -13,6 +13,9 @@ class Character extends Model
     protected $fillable = [
         'game_id',
         'name',
+        'age',
+        'gender',
+        'race',
         'is_player',
         'info',
         'personality',
@@ -26,6 +29,8 @@ class Character extends Model
         'secrets',
         'limits',
         'intentions',
+        'talking_mannerism',
+        'talking_style',
         'temperature',
         'str',
         'dex',
@@ -45,6 +50,7 @@ class Character extends Model
 
     protected $casts = [
         'is_player' => 'boolean',
+        'age' => 'integer',
         'temperature' => 'float',
         'str' => 'integer',
         'dex' => 'integer',
@@ -88,9 +94,10 @@ class Character extends Model
         return $this->hasMany(CharacterMemory::class);
     }
 
-    public function memories(): HasManyThrough
+    public function memories(): BelongsToMany
     {
-        return $this->hasManyThrough(Memory::class, CharacterMemory::class, 'character_id', 'id', 'id', 'memory_id');
+        return $this->belongsToMany(Memory::class, 'character_memories')
+            ->where('active', true);
     }
 
     public function characterItems(): HasMany
@@ -103,5 +110,32 @@ class Character extends Model
         return $this->belongsToMany(Item::class, 'character_items')
             ->withPivot(['quantity', 'equipped'])
             ->withTimestamps();
+    }
+
+    public function relationshipMaps(): HasMany
+    {
+        return $this->hasMany(CharacterRelationshipMap::class, 'from_character_id');
+    }
+
+    public function createRelationshipWith(Character $target, array $axes): CharacterRelationship
+    {
+        $relationship = CharacterRelationship::create($axes);
+
+        CharacterRelationshipMap::create([
+            'from_character_id' => $this->id,
+            'to_character_id' => $target->id,
+            'character_relationship_id' => $relationship->id,
+        ]);
+
+        return $relationship;
+    }
+
+    public function relationshipWith(Character $target): ?CharacterRelationship
+    {
+        $map = $this->relationshipMaps()
+            ->where('to_character_id', $target->id)
+            ->first();
+
+        return $map?->relationship;
     }
 }
