@@ -3,6 +3,7 @@
 use App\Http\Controllers\GameController;
 use App\Http\Controllers\PlayController;
 use App\Http\Controllers\PlaygroundController;
+use App\Http\Controllers\SimulationController;
 use App\Models\Game;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -35,3 +36,11 @@ Route::delete('/game/{game}', [GameController::class, 'destroy'])->name('game.de
 // Playground
 Route::get('/playground', [PlaygroundController::class, 'index'])->name('playground');
 Route::post('/playground/generate', [PlaygroundController::class, 'generate'])->name('playground.generate');
+
+// Simulation
+Route::get('/simulation', [SimulationController::class, 'index'])->name('simulation.index');
+Route::post('/simulation/tick', [SimulationController::class, 'tick'])->name('simulation.tick');
+Route::post('/simulation/reset', [SimulationController::class, 'reset'])->name('simulation.reset');
+Route::get('/simulation/npc/{npc}', [SimulationController::class, 'npc'])->name('simulation.npc');
+Route::get('/simulation/object/{object}', [SimulationController::class, 'object'])->name('simulation.object');
+Route::get('/simulation/place/{place}', [SimulationController::class, 'place'])->name('simulation.place');
