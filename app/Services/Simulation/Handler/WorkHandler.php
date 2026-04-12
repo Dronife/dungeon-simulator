@@ -12,7 +12,7 @@ class WorkHandler
     private const RENT_EXTRACTOR_PURPOSE_ON_COLLECT = 15;
     private const DEPENDENT_PURPOSE_ON_BEG = 5;
 
-    public function __construct(private Ticker $ticker) {}
+    public function __construct(private readonly Ticker $ticker) {}
 
     public function householdLoop(SimNpc $npc, int $tick): void
     {

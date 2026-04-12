@@ -10,7 +10,7 @@ class DeathHandler
 {
     private const DEATH_GRACE_TICKS = 5;
 
-    public function __construct(private Ticker $ticker) {}
+    public function __construct(private readonly Ticker $ticker) {}
 
     public function checkDeath(SimNpc $npc, int $tick): bool
     {

@@ -12,7 +12,7 @@ class SurvivalHandler
     private const FORAGE_HUNGER_GAIN = 12;
     private const SELLER_PURPOSE_ON_SALE = 20;
 
-    public function __construct(private Ticker $ticker) {}
+    public function __construct(private readonly Ticker $ticker) {}
 
     public function tryDrink(SimNpc $npc, int $tick): void
     {

@@ -20,7 +20,7 @@ class Ticker
         'thirst'      => 2,
         'rest'        => 1,
         'hygiene'     => 1,
-        'safety'      => 0,
+        'safety'      => 1,
         'social_need' => 1,
         'purpose'     => 2,
     ];
@@ -51,27 +51,27 @@ class Ticker
     /** @var array<int, array<int, SimRelationship>> */
     private array $relationships = [];
 
-    private SurvivalHandler $survivalHandler;
-    private WorkHandler $workHandler;
-    private BehaviorHandler $behaviorHandler;
-    private DeathHandler $deathHandler;
+    private readonly SurvivalHandler $survival;
+    private readonly WorkHandler $work;
+    private readonly BehaviorHandler $behavior;
+    private readonly DeathHandler $death;
 
     public function __construct()
     {
-        $this->survivalHandler = new SurvivalHandler($this);
-        $this->workHandler = new WorkHandler($this);
-        $this->behaviorHandler = new BehaviorHandler($this);
-        $this->deathHandler = new DeathHandler($this);
+        $this->survival = new SurvivalHandler($this);
+        $this->work = new WorkHandler($this);
+        $this->behavior = new BehaviorHandler($this);
+        $this->death = new DeathHandler($this);
     }
 
     public function survival(): SurvivalHandler
     {
-        return $this->survivalHandler;
+        return $this->survival;
     }
 
     public function behavior(): BehaviorHandler
     {
-        return $this->behaviorHandler;
+        return $this->behavior;
     }
 
     public function tick(): array
@@ -93,6 +93,7 @@ class Ticker
                 $this->decayNeeds($npc);
                 $this->actFor($npc, $state->tick);
             }
+            $this->decayRelationships();
             foreach ($this->npcById as $npc) {
                 $npc->save();
             }
@@ -139,7 +140,7 @@ class Ticker
             return;
         }
 
-        if ($this->deathHandler->checkDeath($npc, $tick)) {
+        if ($this->death->checkDeath($npc, $tick)) {
             return;
         }
 
@@ -155,35 +156,43 @@ class Ticker
 
         if ($mostUrgentValue < self::CRITICAL_THRESHOLD) {
             match ($mostUrgent) {
-                'thirst' => $this->survivalHandler->tryDrink($npc, $tick),
-                'hunger' => $this->survivalHandler->tryEat($npc, $tick),
-                'rest'   => $this->survivalHandler->trySleep($npc, $tick),
+                'thirst' => $this->survival->tryDrink($npc, $tick),
+                'hunger' => $this->survival->tryEat($npc, $tick),
+                'rest'   => $this->survival->trySleep($npc, $tick),
             };
             return;
         }
 
         // Personality-driven behaviors
-        if ($this->behaviorHandler->shouldShirkWork($npc)) {
-            $this->behaviorHandler->selfCare($npc, $tick);
+        if ($this->behavior->shouldShirkWork($npc)) {
+            $this->behavior->selfCare($npc, $tick);
             return;
         }
 
-        if ($this->behaviorHandler->shouldHelpOthers($npc) && $this->behaviorHandler->tryHelp($npc, $tick)) {
+        if ($this->behavior->shouldHelpOthers($npc) && $this->behavior->tryHelp($npc, $tick)) {
             return;
         }
 
-        if ($npc->purpose < self::PURPOSE_PRAY_THRESHOLD && $this->behaviorHandler->pray($npc, $tick)) {
+        if ($npc->purpose < self::PURPOSE_PRAY_THRESHOLD && $this->behavior->pray($npc, $tick)) {
             return;
         }
 
-        if ($npc->hygiene < self::HYGIENE_MEND_THRESHOLD && $this->behaviorHandler->mend($npc, $tick)) {
+        if ($npc->hygiene < self::HYGIENE_MEND_THRESHOLD && $this->behavior->mend($npc, $tick)) {
+            return;
+        }
+
+        if ($this->behavior->trySocialize($npc, $tick)) {
+            return;
+        }
+
+        if ($this->behavior->tryShopForNeeds($npc, $tick)) {
             return;
         }
 
         // Night: no work — rest or idle
         if ($this->isNightTime()) {
             if ($npc->rest < 70) {
-                $this->survivalHandler->trySleep($npc, $tick);
+                $this->survival->trySleep($npc, $tick);
                 return;
             }
             $this->idle($npc, $tick);
@@ -192,11 +201,11 @@ class Ticker
 
         // Archetype work loop
         match ($npc->archetype) {
-            'household_producer' => $this->workHandler->householdLoop($npc, $tick),
-            'market_craftsman'   => $this->workHandler->produceLoop($npc, $tick),
-            'service_provider'   => $this->workHandler->produceLoop($npc, $tick),
-            'rent_extractor'     => $this->workHandler->rentLoop($npc, $tick),
-            'dependent'          => $this->workHandler->dependentLoop($npc, $tick),
+            'household_producer' => $this->work->householdLoop($npc, $tick),
+            'market_craftsman'   => $this->work->produceLoop($npc, $tick),
+            'service_provider'   => $this->work->produceLoop($npc, $tick),
+            'rent_extractor'     => $this->work->rentLoop($npc, $tick),
+            'dependent'          => $this->work->dependentLoop($npc, $tick),
             default              => $this->idle($npc, $tick),
         };
     }
@@ -222,10 +231,31 @@ class Ticker
         }
     }
 
+    private function decayRelationships(): void
+    {
+        foreach ($this->relationships as $fromRelations) {
+            foreach ($fromRelations as $rel) {
+                if ($rel->trust > 0) {
+                    $rel->trust--;
+                } elseif ($rel->trust < 0) {
+                    $rel->trust++;
+                }
+
+                if ($rel->fear > 0) {
+                    $rel->fear--;
+                }
+            }
+        }
+    }
+
     private function saveRelationships(): void
     {
         foreach ($this->relationships as $fromRelations) {
             foreach ($fromRelations as $rel) {
+                if ($rel->exists && $rel->trust === 0 && $rel->fear === 0) {
+                    $rel->delete();
+                    continue;
+                }
                 if (!$rel->exists || $rel->isDirty()) {
                     $rel->save();
                 }

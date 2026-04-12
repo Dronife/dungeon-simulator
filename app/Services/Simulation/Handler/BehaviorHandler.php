@@ -21,7 +21,19 @@ class BehaviorHandler
     private const HELP_SOCIAL_GAIN = 10;
     private const CHARITY_PURPOSE_GAIN = 15;
 
-    public function __construct(private Ticker $ticker) {}
+    private const SOCIAL_THRESHOLD = 40;
+    private const SOCIAL_EXTRAVERSION_MIN = 6;
+    private const SOCIAL_DESPERATE = 25;
+    private const SOCIAL_GAIN = 15;
+    private const SOCIAL_PASSIVE_GAIN = 10;
+    private const SOCIAL_RADIUS = 6;
+
+    private const SHOP_THRESHOLD = 50;
+    private const SHOP_RADIUS = 3;
+    private const SHOP_NEEDS = ['safety', 'hygiene'];
+    private const DURABLE_TYPES = ['weapon', 'armor', 'clothing', 'tool', 'furniture'];
+
+    public function __construct(private readonly Ticker $ticker) {}
 
     public function shouldShirkWork(SimNpc $npc): bool
     {
@@ -127,6 +139,153 @@ class BehaviorHandler
         return true;
     }
 
+    // ---------------------------------------------------------------
+    //  Social
+    // ---------------------------------------------------------------
+
+    public function trySocialize(SimNpc $npc, int $tick): bool
+    {
+        $extraverted = $npc->extraversion >= self::SOCIAL_EXTRAVERSION_MIN;
+        $desperate = $npc->social_need < self::SOCIAL_DESPERATE;
+        if ($npc->social_need >= self::SOCIAL_THRESHOLD || (!$extraverted && !$desperate)) {
+            return false;
+        }
+
+        $companion = $this->ticker->npcById
+            ->filter(function (SimNpc $other) use ($npc) {
+                if ($other->id === $npc->id) {
+                    return false;
+                }
+                if ($other->current_action === 'dead') {
+                    return false;
+                }
+                return (abs($other->x - $npc->x) + abs($other->y - $npc->y)) <= self::SOCIAL_RADIUS;
+            })
+            ->sortBy(fn (SimNpc $other) => abs($other->x - $npc->x) + abs($other->y - $npc->y))
+            ->first();
+
+        if (!$companion) {
+            return false;
+        }
+
+        $dist = abs($companion->x - $npc->x) + abs($companion->y - $npc->y);
+        if ($dist > 1) {
+            $npc->x += $this->ticker->step($npc->x, $companion->x);
+            $npc->y += $this->ticker->step($npc->y, $companion->y);
+            $npc->place_id = $this->ticker->placeAt($npc->x, $npc->y);
+            $npc->current_action = 'walking';
+            $npc->current_action_target = $companion->name;
+            $this->ticker->log(
+                $npc, $tick, 'social', 'walk_to', null, $npc->place_id,
+                "seeking company of {$companion->name}"
+            );
+            return true;
+        }
+
+        $npc->social_need = min(100, $npc->social_need + self::SOCIAL_GAIN);
+        $companion->social_need = min(100, $companion->social_need + self::SOCIAL_PASSIVE_GAIN);
+        $npc->current_action = 'talking';
+        $npc->current_action_target = $companion->name;
+        $this->ticker->log(
+            $npc, $tick, 'social', 'gossip', null, $npc->place_id,
+            "chatted with {$companion->name}"
+        );
+        $this->ticker->modifyRelationship($npc->id, $companion->id, 2, 0, 'socializing', $tick);
+        $this->ticker->modifyRelationship($companion->id, $npc->id, 2, 0, 'socializing', $tick);
+        return true;
+    }
+
+    // ---------------------------------------------------------------
+    //  Shopping — creates demand for non-food goods
+    // ---------------------------------------------------------------
+
+    public function tryShopForNeeds(SimNpc $npc, int $tick): bool
+    {
+        if ($npc->wealth <= 0) {
+            return false;
+        }
+
+        $lowNeeds = [];
+        foreach (self::SHOP_NEEDS as $need) {
+            if ($npc->{$need} < self::SHOP_THRESHOLD) {
+                $lowNeeds[] = $need;
+            }
+        }
+        if (count($lowNeeds) === 0) {
+            return false;
+        }
+
+        // Only shop nearby — don't travel for comfort goods
+        $items = SimObject::where('for_sale', true)
+            ->where('price', '<=', $npc->wealth)
+            ->whereNotNull('affordances')
+            ->whereNotNull('x')
+            ->whereNotNull('y')
+            ->get()
+            ->filter(fn (SimObject $o) => (abs($o->x - $npc->x) + abs($o->y - $npc->y)) <= self::SHOP_RADIUS);
+
+        if ($items->isEmpty()) {
+            return false;
+        }
+
+        foreach ($lowNeeds as $need) {
+            $item = $items
+                ->filter(function (SimObject $o) use ($npc, $need) {
+                    $affordances = $o->affordances ?? [];
+                    if (!isset($affordances[$need]) || $affordances[$need] <= 0) {
+                        return false;
+                    }
+                    // Don't buy durable goods we already own
+                    if (in_array($o->type, self::DURABLE_TYPES, true)) {
+                        return !SimObject::where('owner_npc_id', $npc->id)
+                            ->where('subtype', $o->subtype)
+                            ->exists();
+                    }
+                    return true;
+                })
+                ->sortBy('price')
+                ->first();
+
+            if (!$item) {
+                continue;
+            }
+
+            $this->ticker->survival()->purchase($npc, $item, $tick);
+
+            // Apply affordances
+            $applied = [];
+            foreach ($item->affordances as $needKey => $amount) {
+                if (!array_key_exists($needKey, Ticker::DECAY)) {
+                    continue;
+                }
+                $before = $npc->{$needKey};
+                $npc->{$needKey} = min(100, $npc->{$needKey} + $amount);
+                $applied[] = "{$needKey} +" . ($npc->{$needKey} - $before);
+            }
+
+            // Delete consumables, keep durables in inventory
+            $isDurable = in_array($item->type, self::DURABLE_TYPES, true);
+            if (!$isDurable) {
+                $item->delete();
+            }
+
+            $useVerb = $isDurable ? 'equipped' : 'applied';
+            $npc->current_action = 'trading';
+            $npc->current_action_target = $item->name;
+            $this->ticker->log(
+                $npc, $tick, 'satisfy_need', 'buy', $item->id, $npc->place_id,
+                "{$useVerb} {$item->name} (" . implode(', ', $applied) . ')'
+            );
+            return true;
+        }
+
+        return false;
+    }
+
+    // ---------------------------------------------------------------
+    //  Theft
+    // ---------------------------------------------------------------
+
     public function trySteal(SimNpc $npc, int $tick): bool
     {
         // Night loosens moral inhibitions (+1 to agreeableness gate)
@@ -145,7 +304,6 @@ class BehaviorHandler
             ->get()
             ->filter(fn (SimObject $o) => (abs($o->x - $npc->x) + abs($o->y - $npc->y)) <= self::STEAL_RADIUS)
             ->filter(function (SimObject $o) use ($npc) {
-                // Skip targets whose owners we fear (learned from past failure)
                 $rel = $this->ticker->getRelationship($npc->id, $o->owner_npc_id);
                 return !$rel || $rel->fear <= 30;
             })
@@ -196,6 +354,10 @@ class BehaviorHandler
         $this->ticker->modifyRelationship($npc->id, $victim->id, 0, 15, 'caught_stealing', $tick);
         return true;
     }
+
+    // ---------------------------------------------------------------
+    //  Spiritual / maintenance
+    // ---------------------------------------------------------------
 
     public function pray(SimNpc $npc, int $tick): bool
     {
