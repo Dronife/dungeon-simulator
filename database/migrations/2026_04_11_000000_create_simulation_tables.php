@@ -85,6 +85,18 @@ return new class extends Migration
             $table->timestamps();
         });
 
+        Schema::create('sim_relationships', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('from_npc_id')->constrained('sim_npcs')->cascadeOnDelete();
+            $table->foreignId('to_npc_id')->constrained('sim_npcs')->cascadeOnDelete();
+            $table->smallInteger('trust')->default(0);
+            $table->smallInteger('fear')->default(0);
+            $table->string('last_event')->nullable();
+            $table->integer('last_event_tick')->default(0);
+            $table->timestamps();
+            $table->unique(['from_npc_id', 'to_npc_id']);
+        });
+
         Schema::create('sim_objects', function (Blueprint $table) {
             $table->id();
             $table->string('name');
@@ -152,6 +164,7 @@ return new class extends Migration
         Schema::dropIfExists('sim_state');
         Schema::dropIfExists('sim_actions');
         Schema::dropIfExists('sim_objects');
+        Schema::dropIfExists('sim_relationships');
         Schema::dropIfExists('sim_npcs');
         Schema::dropIfExists('sim_places');
     }
