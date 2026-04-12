@@ -9,6 +9,7 @@ use App\Models\Simulation\SimPlace;
 use App\Models\Simulation\SimState;
 use App\Services\Simulation\Ticker;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -82,7 +83,16 @@ class SimulationController extends Controller
 
     public function reset(): RedirectResponse
     {
-        \Artisan::call('migrate:refresh', ['--path' => 'database/migrations/2026_04_11_000000_create_simulation_tables.php']);
+        DB::statement('SET FOREIGN_KEY_CHECKS = 0');
+        DB::table('sim_actions')->truncate();
+        DB::table('sim_objects')->truncate();
+        DB::table('sim_relationships')->truncate();
+        DB::table('sim_npcs')->truncate();
+        DB::table('sim_households')->truncate();
+        DB::table('sim_places')->truncate();
+        DB::table('sim_state')->truncate();
+        DB::statement('SET FOREIGN_KEY_CHECKS = 1');
+
         \Artisan::call('db:seed', ['--class' => 'Database\\Seeders\\SimulationSeeder']);
 
         return redirect()->route('simulation.index');

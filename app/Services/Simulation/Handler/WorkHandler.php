@@ -120,7 +120,7 @@ class WorkHandler
             ->filter(fn (SimNpc $other) =>
                 $other->id !== $npc->id
                 && $other->wealth >= $minVictim
-                && (abs($other->x - $npc->x) + abs($other->y - $npc->y)) <= $radius
+                && $this->ticker->npcDistance($npc, $other) <= $radius
             )
             ->values();
 
@@ -172,9 +172,9 @@ class WorkHandler
                 $other->id !== $npc->id
                 && $other->archetype !== 'dependent'
                 && $other->wealth >= $minDonor
-                && (abs($other->x - $npc->x) + abs($other->y - $npc->y)) <= $radius
+                && $this->ticker->npcDistance($npc, $other) <= $radius
             )
-            ->sortBy(fn (SimNpc $other) => abs($other->x - $npc->x) + abs($other->y - $npc->y))
+            ->sortBy(fn (SimNpc $other) => $this->ticker->npcDistance($npc, $other))
             ->first();
 
         if ($donor) {

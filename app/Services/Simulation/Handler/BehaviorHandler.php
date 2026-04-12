@@ -27,11 +27,13 @@ class BehaviorHandler
     private const SOCIAL_GAIN = 15;
     private const SOCIAL_PASSIVE_GAIN = 10;
     private const SOCIAL_RADIUS = 6;
+    private const GOSSIP_SPREAD_FACTOR = 0.3;
 
     private const SHOP_THRESHOLD = 50;
     private const SHOP_RADIUS = 3;
-    private const SHOP_NEEDS = ['safety', 'hygiene'];
+    private const SHOP_NEEDS = ['safety', 'hygiene', 'purpose', 'social_need'];
     private const DURABLE_TYPES = ['weapon', 'armor', 'clothing', 'tool', 'furniture'];
+    private const HEALING_SUBTYPES = ['salve', 'poultice'];
 
     public function __construct(private readonly Ticker $ticker) {}
 
@@ -77,7 +79,7 @@ class BehaviorHandler
                 if ($worst >= 40) {
                     return false;
                 }
-                return (abs($other->x - $npc->x) + abs($other->y - $npc->y)) <= self::HELP_RADIUS;
+                return $this->ticker->npcDistance($npc, $other) <= self::HELP_RADIUS;
             })
             ->sortBy(fn (SimNpc $other) => min($other->hunger, $other->thirst, $other->rest))
             ->first();
@@ -86,7 +88,7 @@ class BehaviorHandler
             return false;
         }
 
-        $dist = abs($sufferer->x - $npc->x) + abs($sufferer->y - $npc->y);
+        $dist = $this->ticker->npcDistance($npc, $sufferer);
         if ($dist > 1) {
             $npc->x += $this->ticker->step($npc->x, $sufferer->x);
             $npc->y += $this->ticker->step($npc->y, $sufferer->y);
@@ -159,16 +161,16 @@ class BehaviorHandler
                 if ($other->current_action === 'dead') {
                     return false;
                 }
-                return (abs($other->x - $npc->x) + abs($other->y - $npc->y)) <= self::SOCIAL_RADIUS;
+                return $this->ticker->npcDistance($npc, $other) <= self::SOCIAL_RADIUS;
             })
-            ->sortBy(fn (SimNpc $other) => abs($other->x - $npc->x) + abs($other->y - $npc->y))
+            ->sortBy(fn (SimNpc $other) => $this->ticker->npcDistance($npc, $other))
             ->first();
 
         if (!$companion) {
             return false;
         }
 
-        $dist = abs($companion->x - $npc->x) + abs($companion->y - $npc->y);
+        $dist = $this->ticker->npcDistance($npc, $companion);
         if ($dist > 1) {
             $npc->x += $this->ticker->step($npc->x, $companion->x);
             $npc->y += $this->ticker->step($npc->y, $companion->y);
@@ -192,7 +194,126 @@ class BehaviorHandler
         );
         $this->ticker->modifyRelationship($npc->id, $companion->id, 2, 0, 'socializing', $tick);
         $this->ticker->modifyRelationship($companion->id, $npc->id, 2, 0, 'socializing', $tick);
+
+        $this->spreadGossip($npc, $companion, $tick);
+
         return true;
+    }
+
+    /**
+     * During chat, the initiator shares their strongest opinion about a third party.
+     * The listener's trust/fear toward that NPC shifts by ~30% of the gossiper's feeling.
+     */
+    private function spreadGossip(SimNpc $gossiper, SimNpc $listener, int $tick): void
+    {
+        $strongest = null;
+        $strongestWeight = 0;
+
+        foreach ($this->ticker->npcById as $other) {
+            if ($other->id === $gossiper->id || $other->id === $listener->id) {
+                continue;
+            }
+            if ($other->current_action === 'dead') {
+                continue;
+            }
+            $rel = $this->ticker->getRelationship($gossiper->id, $other->id);
+            if ($rel === null) {
+                continue;
+            }
+            $weight = abs($rel->trust) + $rel->fear;
+            if ($weight > $strongestWeight) {
+                $strongestWeight = $weight;
+                $strongest = $rel;
+            }
+        }
+
+        if ($strongest === null || $strongestWeight < 5) {
+            return;
+        }
+
+        $subjectId = $strongest->to_npc_id;
+        $subject = $this->ticker->npcById[$subjectId] ?? null;
+        if ($subject === null) {
+            return;
+        }
+
+        $trustDelta = (int) round($strongest->trust * self::GOSSIP_SPREAD_FACTOR);
+        $fearDelta = (int) round($strongest->fear * self::GOSSIP_SPREAD_FACTOR);
+
+        if ($trustDelta === 0 && $fearDelta === 0) {
+            return;
+        }
+
+        $this->ticker->modifyRelationship($listener->id, $subjectId, $trustDelta, $fearDelta, 'gossip', $tick);
+
+        $tone = $strongest->trust < 0 ? 'warned about' : 'praised';
+        $this->ticker->log(
+            $gossiper, $tick, 'social', 'gossip', null, $gossiper->place_id,
+            "{$tone} {$subject->name} to {$listener->name}"
+        );
+    }
+
+    // ---------------------------------------------------------------
+    //  Healing — sick NPCs seek medicine
+    // ---------------------------------------------------------------
+
+    public function trySeekHealing(SimNpc $npc, int $tick): bool
+    {
+        // Check own inventory first
+        $ownMedicine = SimObject::where('owner_npc_id', $npc->id)
+            ->whereIn('subtype', self::HEALING_SUBTYPES)
+            ->first();
+
+        if ($ownMedicine) {
+            $this->applyMedicine($npc, $ownMedicine, $tick);
+            return true;
+        }
+
+        // Buy nearby medicine
+        if ($npc->wealth <= 0) {
+            return false;
+        }
+
+        $medicine = SimObject::where('for_sale', true)
+            ->whereIn('subtype', self::HEALING_SUBTYPES)
+            ->where('price', '<=', $npc->wealth)
+            ->whereNotNull('x')
+            ->whereNotNull('y')
+            ->get()
+            ->filter(fn (SimObject $o) => $this->ticker->distance($o->x, $o->y, $npc->x, $npc->y) <= 5)
+            ->sortBy('price')
+            ->first();
+
+        if ($medicine === null) {
+            return false;
+        }
+
+        $dist = $this->ticker->distance($medicine->x, $medicine->y, $npc->x, $npc->y);
+        if ($dist > 1) {
+            $place = $this->ticker->placesById[$medicine->place_id] ?? null;
+            if ($place !== null) {
+                $this->ticker->walkTowardsPlace($npc, $place, $tick, 'medicine');
+            }
+            return true;
+        }
+
+        $this->ticker->survival()->purchase($npc, $medicine, $tick);
+        $this->applyMedicine($npc, $medicine, $tick);
+        return true;
+    }
+
+    private function applyMedicine(SimNpc $npc, SimObject $medicine, int $tick): void
+    {
+        $label = str_replace('_', ' ', $npc->illness ?? 'illness');
+        $npc->illness = null;
+        $npc->illness_since_tick = null;
+        $npc->current_action = 'healing';
+        $npc->current_action_target = $medicine->name;
+        $this->ticker->log(
+            $npc, $tick, 'satisfy_need', 'heal', $medicine->id, $npc->place_id,
+            "used {$medicine->name} to cure {$label}"
+        );
+        $medicine->delete();
     }
 
     // ---------------------------------------------------------------
@@ -222,7 +343,7 @@ class BehaviorHandler
             ->whereNotNull('x')
             ->whereNotNull('y')
             ->get()
-            ->filter(fn (SimObject $o) => (abs($o->x - $npc->x) + abs($o->y - $npc->y)) <= self::SHOP_RADIUS);
+            ->filter(fn (SimObject $o) => $this->ticker->distance($o->x, $o->y, $npc->x, $npc->y) <= self::SHOP_RADIUS);
 
         if ($items->isEmpty()) {
             return false;
@@ -302,12 +423,12 @@ class BehaviorHandler
             ->whereNotNull('x')
             ->whereNotNull('y')
             ->get()
-            ->filter(fn (SimObject $o) => (abs($o->x - $npc->x) + abs($o->y - $npc->y)) <= self::STEAL_RADIUS)
+            ->filter(fn (SimObject $o) => $this->ticker->distance($o->x, $o->y, $npc->x, $npc->y) <= self::STEAL_RADIUS)
             ->filter(function (SimObject $o) use ($npc) {
                 $rel = $this->ticker->getRelationship($npc->id, $o->owner_npc_id);
                 return !$rel || $rel->fear <= 30;
             })
-            ->sortBy(fn (SimObject $o) => abs($o->x - $npc->x) + abs($o->y - $npc->y))
+            ->sortBy(fn (SimObject $o) => $this->ticker->distance($o->x, $o->y, $npc->x, $npc->y))
             ->first();
 
         if (!$target) {
@@ -320,7 +441,7 @@ class BehaviorHandler
             return true;
         }
 
-        $dist = abs($target->x - $npc->x) + abs($target->y - $npc->y);
+        $dist = $this->ticker->distance($target->x, $target->y, $npc->x, $npc->y);
         if ($dist > 1) {
             $npc->x += $this->ticker->step($npc->x, $target->x);
             $npc->y += $this->ticker->step($npc->y, $target->y);
@@ -352,6 +473,7 @@ class BehaviorHandler
         );
         $this->ticker->modifyRelationship($victim->id, $npc->id, -20, 0, 'caught_thief', $tick);
         $this->ticker->modifyRelationship($npc->id, $victim->id, 0, 15, 'caught_stealing', $tick);
+        $this->ticker->justice()->reportCrime($npc->id, $victim->id, $tick);
         return true;
     }
 
@@ -366,7 +488,7 @@ class BehaviorHandler
             return false;
         }
 
-        $distToShrine = abs($shrine->x - $npc->x) + abs($shrine->y - $npc->y);
+        $distToShrine = $this->ticker->distance($shrine->x, $shrine->y, $npc->x, $npc->y);
         if ($distToShrine > 12) {
             return false;
         }
@@ -434,6 +556,7 @@ class BehaviorHandler
                 "lost {$item->name} to a thief"
             );
             $this->ticker->modifyRelationship($victim->id, $thief->id, -30, 20, 'theft_victim', $tick);
+            $this->ticker->justice()->reportCrime($thief->id, $victim->id, $tick);
         }
     }
 }

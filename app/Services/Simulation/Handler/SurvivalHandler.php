@@ -18,7 +18,7 @@ class SurvivalHandler
     {
         $well = $this->ticker->places
             ->filter(fn (SimPlace $p) => in_array($p->subtype, ['well', 'river', 'stream', 'pond'], true))
-            ->sortBy(fn (SimPlace $p) => abs($p->x - $npc->x) + abs($p->y - $npc->y))
+            ->sortBy(fn (SimPlace $p) => $this->ticker->distance($p->x, $p->y, $npc->x, $npc->y))
             ->first();
 
         if (!$well) {
@@ -26,7 +26,7 @@ class SurvivalHandler
             return;
         }
 
-        if (abs($npc->x - $well->x) + abs($npc->y - $well->y) > 1) {
+        if ($this->ticker->distance($npc->x, $npc->y, $well->x, $well->y) > 1) {
             $this->ticker->walkTowardsPlace($npc, $well, $tick, 'water');
             return;
         }
@@ -48,6 +48,26 @@ class SurvivalHandler
         if ($own) {
             $this->consumeFood($npc, $tick, $own);
             return;
+        }
+
+        // 1b. Eat from household member's stock
+        $householdIds = $this->ticker->getHouseholdMemberIds($npc);
+        if (count($householdIds) > 0) {
+            $shared = SimObject::whereIn('owner_npc_id', $householdIds)
+                ->where('type', 'food')
+                ->first();
+            if ($shared) {
+                $donor = $this->ticker->npcById[$shared->owner_npc_id] ?? null;
+                $donorName = $donor ? $donor->name : 'household';
+                $shared->owner_npc_id = $npc->id;
+                $shared->save();
+                $this->ticker->log(
+                    $npc, $tick, 'social', 'take', $shared->id, $npc->place_id,
+                    "took {$shared->name} from household ({$donorName}'s stock)"
+                );
+                $this->consumeFood($npc, $tick, $shared);
+                return;
+            }
         }
 
         // 2. Buy affordable food at current place
@@ -97,10 +117,19 @@ class SurvivalHandler
             return;
         }
 
-        if ($npc->workplace_id && $npc->place_id !== $npc->workplace_id) {
-            $wp = $this->ticker->placesById[$npc->workplace_id] ?? null;
-            if ($wp) {
-                $this->ticker->walkTowardsPlace($npc, $wp, $tick, 'bed at workplace');
+        // Try household home first, then workplace
+        $homeId = null;
+        if ($npc->household_id !== null) {
+            $household = $this->ticker->householdsById[$npc->household_id] ?? null;
+            $homeId = $household?->home_place_id;
+        }
+        $targetId = $homeId ?? $npc->workplace_id;
+
+        if ($targetId !== null && $npc->place_id !== $targetId) {
+            $target = $this->ticker->placesById[$targetId] ?? null;
+            if ($target !== null) {
+                $label = $homeId !== null ? 'bed at home' : 'bed at workplace';
+                $this->ticker->walkTowardsPlace($npc, $target, $tick, $label);
                 return;
             }
         }
@@ -112,7 +141,7 @@ class SurvivalHandler
                 'place' => $this->ticker->placesById[$o->place_id] ?? null,
             ])
             ->filter(fn (array $p) => $p['place'] !== null)
-            ->sortBy(fn (array $p) => abs($p['place']->x - $npc->x) + abs($p['place']->y - $npc->y))
+            ->sortBy(fn (array $p) => $this->ticker->distance($p['place']->x, $p['place']->y, $npc->x, $npc->y))
             ->first();
 
         if ($closest) {
@@ -153,6 +182,9 @@ class SurvivalHandler
         if ($seller) {
             $seller->wealth += $price;
             $seller->purpose = min(100, $seller->purpose + self::SELLER_PURPOSE_ON_SALE);
+            if ($seller->goal_type === 'sell_goods') {
+                $seller->goal_progress++;
+            }
             $seller->current_action = 'selling';
             $seller->current_action_target = $buyer->name;
             $this->ticker->log(
@@ -207,7 +239,7 @@ class SurvivalHandler
         }
         return $this->ticker->places
             ->whereIn('id', $placeIds)
-            ->sortBy(fn (SimPlace $p) => abs($p->x - $npc->x) + abs($p->y - $npc->y))
+            ->sortBy(fn (SimPlace $p) => $this->ticker->distance($p->x, $p->y, $npc->x, $npc->y))
             ->first();
     }
 }

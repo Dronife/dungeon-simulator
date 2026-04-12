@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Simulation\SimHousehold;
 use App\Models\Simulation\SimNpc;
 use App\Models\Simulation\SimObject;
 use App\Models\Simulation\SimPlace;
@@ -16,6 +17,7 @@ class SimulationSeeder extends Seeder
         DB::table('sim_actions')->delete();
         DB::table('sim_objects')->delete();
         DB::table('sim_npcs')->delete();
+        DB::table('sim_households')->delete();
         DB::table('sim_places')->delete();
         DB::table('sim_state')->delete();
 
@@ -23,6 +25,7 @@ class SimulationSeeder extends Seeder
 
         $places = $this->createPlaces();
         $npcs = $this->createNpcs($places);
+        $this->createHouseholds($places, $npcs);
         $this->createObjects($places, $npcs);
     }
 
@@ -216,6 +219,36 @@ class SimulationSeeder extends Seeder
             'dependent'          => 'destitute',
             default              => 'commoner',
         };
+    }
+
+    /**
+     * @param array<string, SimPlace> $places
+     * @param array<string, SimNpc> $npcs
+     */
+    /**
+     * @param array<string, SimPlace> $places
+     * @param array<string, SimNpc> $npcs
+     */
+    private function createHouseholds(array $places, array $npcs): void
+    {
+        $households = [
+            ['name' => 'Sunhold Farmstead', 'home' => 'farm_sunhold',   'members' => ['harn', 'grob']],
+            ['name' => 'Thornvale Farmstead','home' => 'farm_thornvale', 'members' => ['lida', 'runa']],
+            ['name' => 'Iron-Hand Forge',    'home' => 'forge',          'members' => ['brann', 'mira']],
+            ['name' => 'Market Row',         'home' => 'bakery',         'members' => ['orlo', 'velka']],
+            ['name' => 'Shrine Lodge',       'home' => 'shrine',         'members' => ['ibelin', 'dessra']],
+        ];
+
+        foreach ($households as $def) {
+            $household = SimHousehold::create([
+                'name'          => $def['name'],
+                'home_place_id' => $places[$def['home']]->id,
+            ]);
+            foreach ($def['members'] as $key) {
+                $npcs[$key]->household_id = $household->id;
+                $npcs[$key]->save();
+            }
+        }
     }
 
     /**
